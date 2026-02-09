@@ -1,4 +1,4 @@
-import fastify, { FastifyInstance, FastifyRequest, FastifyReply } from 'fastify';
+import fastify, { FastifyInstance } from 'fastify';
 import cors from '@fastify/cors';
 import rateLimit from '@fastify/rate-limit';
 import dotenv from 'dotenv';
@@ -8,9 +8,17 @@ dotenv.config();
 
 const server: FastifyInstance = fastify({ logger: true });
 
+const PORT = Number(process.env.PORT) || 3000;
+const TIMEOUT = Number(process.env.TIMEOUT) || 60000; // 60 seconds
+const MAX_DIFF_LENGTH = Number(process.env.MAX_DIFF_LENGTH) || 10000;
+const GEMINI_MODEL = process.env.GEMINI_MODEL || "gemini-2.5-flash";
+const GEMINI_API_KEY = process.env.GEMINI_API_KEY || "";
+const GOOGLE_GEMINI_BASE_URL = process.env.GOOGLE_GEMINI_BASE_URL || "";
+const EXTENSION_ID = process.env.EXTENSION_ID || "";
+
 // Register plugins
 server.register(cors, {
-  origin: '*', // For development, allow all. In prod, restrict to extension ID or localhost.
+  origin: EXTENSION_ID || '*',
 });
 
 server.register(rateLimit, {
@@ -56,10 +64,7 @@ server.post<{ Body: GenerateRequestBody }>('/generate', async (request, reply) =
     diffLength: diff.length 
   });
 
-  // Use API Key from Env only (Service provided)
-  const apiKey = process.env.GEMINI_API_KEY;
-
-  if (!apiKey) {
+  if (!GEMINI_API_KEY) {
     return reply.status(500).send({ error: 'Service Configuration Error: Missing Gemini API Key.' });
   }
 
@@ -71,12 +76,10 @@ server.post<{ Body: GenerateRequestBody }>('/generate', async (request, reply) =
   }
 
   try {
-    const genAI = new GoogleGenerativeAI(apiKey);
-    
-    const baseUrl = process.env.GOOGLE_GEMINI_BASE_URL;
+    const genAI = new GoogleGenerativeAI(GEMINI_API_KEY);
     const requestOptions = {
-      baseUrl: baseUrl || undefined,
-      timeout: 60000 // 60 seconds
+      baseUrl: GOOGLE_GEMINI_BASE_URL || undefined,
+      timeout: TIMEOUT
     };
 
     const jsonPrompt = `
@@ -92,9 +95,6 @@ Template:
 <!-- Any details that you think are important to review this PR? -->
 <!-- Are there other PRs related to this one? -->
 
-# Demo
-<!-- Add a screenshot or a video demonstration when possible -->
-
 # How Has This Been Tested?
 <!-- Please describe how you tested your changes -->
 
@@ -107,12 +107,11 @@ Commits:
 ${commits.join('\n')}
 
 Diff:
-${diff.substring(0, 30000)}
+${diff.substring(0, MAX_DIFF_LENGTH)}
     `;
 
-    // gemini-2.5-flash supports responseMimeType: "application/json"
     const jsonModel = genAI.getGenerativeModel({ 
-      model: process.env.GEMINI_MODEL || "gemini-2.5-flash",
+      model: GEMINI_MODEL,
       generationConfig: { responseMimeType: "application/json" }
     }, requestOptions);
 
@@ -134,8 +133,8 @@ ${diff.substring(0, 30000)}
 
 const start = async () => {
   try {
-    await server.listen({ port: 3000, host: '0.0.0.0' });
-    console.log('Server running at http://localhost:3000');
+    await server.listen({ port: PORT, host: '0.0.0.0' });
+    console.log(`Server running at Port ${PORT}`);
   } catch (err) {
     server.log.error(err);
     process.exit(1);
