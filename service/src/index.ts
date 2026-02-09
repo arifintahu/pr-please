@@ -21,6 +21,10 @@ server.register(rateLimit, {
 // Cache storage (Simple in-memory cache)
 const cache = new Map<string, any>();
 
+server.get('/ping', async (request, reply) => {
+  return { status: 'ok', message: 'Service is reachable' };
+});
+
 interface GenerateRequestBody {
   commits: string[];
   diff: string;

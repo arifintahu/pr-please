@@ -31,6 +31,34 @@ document.addEventListener('DOMContentLoaded', () => {
   const statusText = document.getElementById('statusText') as HTMLSpanElement;
 
   let currentMode: 'local' | 'remote' = defaultSettings.mode;
+  let debounceTimer: ReturnType<typeof setTimeout>;
+
+  function checkConnection(url: string) {
+    const statusEl = document.getElementById('connectionStatus');
+    const textEl = statusEl?.querySelector('.status-text');
+    
+    if (!statusEl || !textEl) return;
+
+    // Reset classes
+    statusEl.className = 'connection-status checking';
+    textEl.textContent = 'Checking connection...';
+
+    const pingUrl = url.endsWith('/') ? `${url}ping` : `${url}/ping`;
+
+    fetch(pingUrl)
+      .then(res => {
+        if (res.ok) {
+          statusEl.className = 'connection-status success';
+          textEl.textContent = 'Service connected';
+        } else {
+          throw new Error('Service error');
+        }
+      })
+      .catch(() => {
+        statusEl.className = 'connection-status error';
+        textEl.textContent = 'Connection failed';
+      });
+  }
 
   // Load settings
   chrome.storage.local.get(['mode', 'apiKey', 'serviceUrl', 'model'], (result: { [key: string]: any }) => {
@@ -43,6 +71,11 @@ document.addEventListener('DOMContentLoaded', () => {
     serviceUrlInput.value = settings.serviceUrl || defaultSettings.serviceUrl;
     apiKeyInput.value = settings.apiKey || '';
     modelSelect.value = settings.model || defaultSettings.model;
+
+    // Check connection if in remote mode
+    if (settings.mode === 'remote') {
+      checkConnection(serviceUrlInput.value);
+    }
   });
 
   // Mode Switching
@@ -53,6 +86,7 @@ document.addEventListener('DOMContentLoaded', () => {
       modeLocalBtn.classList.remove('active');
       serviceFields.style.display = 'block';
       localFields.style.display = 'none';
+      checkConnection(serviceUrlInput.value);
     } else {
       modeServiceBtn.classList.remove('active');
       modeLocalBtn.classList.add('active');
@@ -63,6 +97,14 @@ document.addEventListener('DOMContentLoaded', () => {
 
   modeServiceBtn.addEventListener('click', () => setMode('remote'));
   modeLocalBtn.addEventListener('click', () => setMode('local'));
+
+  // Service URL Input Listener
+  serviceUrlInput.addEventListener('input', () => {
+    clearTimeout(debounceTimer);
+    debounceTimer = setTimeout(() => {
+      checkConnection(serviceUrlInput.value.trim());
+    }, 500);
+  });
 
   // Toggle API Key Visibility
   toggleApiKeyBtn.addEventListener('click', () => {
