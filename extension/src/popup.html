@@ -1,0 +1,50 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>PR-Please Settings</title>
+  <link rel="stylesheet" href="popup.css">
+</head>
+<body>
+  <div class="container">
+    <h2>PR-Please Settings</h2>
+    
+    <div class="form-group">
+      <label>Generation Mode:</label>
+      <div class="radio-group">
+        <label>
+          <input type="radio" name="mode" value="local" checked>
+          Local (Own Key)
+        </label>
+        <label>
+          <input type="radio" name="mode" value="remote">
+          Remote Service
+        </label>
+      </div>
+    </div>
+
+    <div id="local-settings" class="settings-section">
+      <div class="form-group">
+        <label for="apiKey">Gemini API Key:</label>
+        <input type="password" id="apiKey" placeholder="Enter your Gemini API Key">
+        <p class="hint">Key is stored locally in your browser.</p>
+      </div>
+    </div>
+
+    <div id="remote-settings" class="settings-section hidden">
+      <div class="form-group">
+        <label for="serviceUrl">Service URL:</label>
+        <input type="text" id="serviceUrl" value="http://localhost:3000">
+      </div>
+    </div>
+
+    <div class="actions">
+      <button id="saveBtn">Save Settings</button>
+    </div>
+    
+    <div id="status" class="status"></div>
+  </div>
+  <script type="module" src="popup.ts"></script>
+</body>
+</html>
