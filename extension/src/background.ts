@@ -1,5 +1,8 @@
 import { GoogleGenerativeAI } from '@google/generative-ai';
 
+const DEFAULT_SERVICE_URL = 'http://localhost:3000';
+const ALLOWED_URL_SCHEMES = ['http:', 'https:'];
+
 interface GenerateRequest {
   action: 'GENERATE_PR';
   commits: string[];
@@ -10,6 +13,19 @@ interface Settings {
   mode: 'local' | 'remote';
   apiKey: string;
   serviceUrl: string;
+}
+
+function validateUrl(url: string): string {
+  try {
+    const parsed = new URL(url);
+    if (!ALLOWED_URL_SCHEMES.includes(parsed.protocol)) {
+      throw new Error(`Invalid URL scheme: ${parsed.protocol}. Only HTTP and HTTPS are allowed.`);
+    }
+    return parsed.href;
+  } catch (e: any) {
+    if (e.message.startsWith('Invalid URL scheme')) throw e;
+    throw new Error('Invalid service URL format.');
+  }
 }
 
 chrome.runtime.onMessage.addListener((request: GenerateRequest, _sender: chrome.runtime.MessageSender, sendResponse: (response?: any) => void) => {
@@ -119,11 +135,17 @@ function filterDiff(diff: string): string {
 
 async function getSettings(): Promise<Settings> {
   return new Promise((resolve) => {
-    chrome.storage.local.get(['mode', 'apiKey', 'serviceUrl'], (result: { [key: string]: any }) => {
-      resolve({
+    chrome.storage.local.get(['mode', 'serviceUrl'], (result: { [key: string]: any }) => {
+      const localSettings: Settings = {
         mode: result.mode || 'local',
-        apiKey: result.apiKey || '',
-        serviceUrl: result.serviceUrl || 'http://localhost:3000'
+        apiKey: '',
+        serviceUrl: result.serviceUrl || DEFAULT_SERVICE_URL
+      };
+
+      // Read API key from session storage (more secure, cleared on browser close)
+      chrome.storage.session.get(['apiKey'], (sessionResult: { [key: string]: any }) => {
+        localSettings.apiKey = sessionResult.apiKey || '';
+        resolve(localSettings);
       });
     });
   });
@@ -144,11 +166,21 @@ async function generateLocal(commits: string[], diff: string, apiKey: string) {
 
   const result = await jsonModel.generateContent(prompt);
   const response = await result.response;
-  return JSON.parse(response.text());
+  let parsed: any;
+  try {
+    parsed = JSON.parse(response.text());
+  } catch {
+    throw new Error('The AI returned an invalid response. Please try again.');
+  }
+  if (!parsed.title || !parsed.description) {
+    throw new Error('The AI response is missing required title or description fields.');
+  }
+  return parsed;
 }
 
 async function generateRemote(commits: string[], diff: string, serviceUrl: string) {
-  const url = serviceUrl.endsWith('/') ? `${serviceUrl}generate` : `${serviceUrl}/generate`;
+  const validatedBase = validateUrl(serviceUrl);
+  const url = validatedBase.endsWith('/') ? `${validatedBase}generate` : `${validatedBase}/generate`;
   
   const headers: Record<string, string> = {
     'Content-Type': 'application/json'

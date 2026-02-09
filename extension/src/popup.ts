@@ -5,10 +5,12 @@ interface Settings {
   model: string;
 }
 
+const DEFAULT_SERVICE_URL = 'http://localhost:3000';
+
 const defaultSettings: Settings = {
-  mode: 'remote', // Default to remote/service as per design doc
+  mode: 'remote',
   apiKey: '',
-  serviceUrl: 'http://localhost:3000',
+  serviceUrl: DEFAULT_SERVICE_URL,
   model: 'gemini-2.5-flash'
 };
 
@@ -60,22 +62,22 @@ document.addEventListener('DOMContentLoaded', () => {
       });
   }
 
-  // Load settings
-  chrome.storage.local.get(['mode', 'apiKey', 'serviceUrl', 'model'], (result: { [key: string]: any }) => {
+  // Load settings — API key from session storage, rest from local storage
+  chrome.storage.local.get(['mode', 'serviceUrl', 'model'], (result: { [key: string]: any }) => {
     const settings = { ...defaultSettings, ...result };
-    
-    // Set Mode
-    setMode(settings.mode);
 
-    // Set Values
+    setMode(settings.mode);
     serviceUrlInput.value = settings.serviceUrl || defaultSettings.serviceUrl;
-    apiKeyInput.value = settings.apiKey || '';
     modelSelect.value = settings.model || defaultSettings.model;
 
-    // Check connection if in remote mode
     if (settings.mode === 'remote') {
       checkConnection(serviceUrlInput.value);
     }
+
+    // Load API key from session storage (cleared on browser close)
+    chrome.storage.session.get(['apiKey'], (sessionResult: { [key: string]: any }) => {
+      apiKeyInput.value = sessionResult.apiKey || '';
+    });
   });
 
   // Mode Switching
@@ -142,30 +144,32 @@ document.addEventListener('DOMContentLoaded', () => {
       }
     }
 
-    chrome.storage.local.set(settings, () => {
+    // Store API key separately in session storage (cleared on browser close)
+    const { apiKey, ...persistentSettings } = settings;
+    chrome.storage.session.set({ apiKey }, () => {
       if (chrome.runtime.lastError) {
         statusRow.style.display = 'flex';
-        statusText.textContent = 'Error saving settings';
+        statusText.textContent = 'Error saving API key';
         statusRow.classList.add('error');
-        
-        setTimeout(() => {
-          statusRow.style.display = 'none';
-          statusRow.classList.remove('error');
-        }, 2000);
+        setTimeout(() => { statusRow.style.display = 'none'; statusRow.classList.remove('error'); }, 2000);
         return;
       }
 
-      // Show saved status
-      statusRow.style.display = 'flex';
-      statusText.textContent = 'Settings saved';
-      saveBtn.textContent = 'Saved!';
-      saveBtn.classList.add('saved');
+      chrome.storage.local.set(persistentSettings, () => {
+        if (chrome.runtime.lastError) {
+          statusRow.style.display = 'flex';
+          statusText.textContent = 'Error saving settings';
+          statusRow.classList.add('error');
+          setTimeout(() => { statusRow.style.display = 'none'; statusRow.classList.remove('error'); }, 2000);
+          return;
+        }
 
-      setTimeout(() => {
-        statusRow.style.display = 'none';
-        saveBtn.textContent = 'Save Settings';
-        saveBtn.classList.remove('saved');
-      }, 2000);
+        statusRow.style.display = 'flex';
+        statusText.textContent = 'Settings saved';
+        saveBtn.textContent = 'Saved!';
+        saveBtn.classList.add('saved');
+        setTimeout(() => { statusRow.style.display = 'none'; saveBtn.textContent = 'Save Settings'; saveBtn.classList.remove('saved'); }, 2000);
+      });
     });
   });
 });
