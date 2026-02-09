@@ -7,6 +7,38 @@ interface Settings {
 
 const DEFAULT_SERVICE_URL = 'http://localhost:3000';
 
+// Simple XOR-based obfuscation for API key storage.
+// Not encryption — prevents plaintext exposure in storage inspection.
+const OBFUSCATION_KEY = 'PrPlease2024ExtKey';
+
+function obfuscateApiKey(plaintext: string): string {
+  const bytes = new TextEncoder().encode(plaintext);
+  const key = new TextEncoder().encode(OBFUSCATION_KEY);
+  const result = new Uint8Array(bytes.length);
+  for (let i = 0; i < bytes.length; i++) {
+    result[i] = bytes[i] ^ key[i % key.length];
+  }
+  return btoa(String.fromCharCode(...result));
+}
+
+function deobfuscateApiKey(encoded: string): string {
+  try {
+    const decoded = atob(encoded);
+    const bytes = new Uint8Array(decoded.length);
+    for (let i = 0; i < decoded.length; i++) {
+      bytes[i] = decoded.charCodeAt(i);
+    }
+    const key = new TextEncoder().encode(OBFUSCATION_KEY);
+    const result = new Uint8Array(bytes.length);
+    for (let i = 0; i < bytes.length; i++) {
+      result[i] = bytes[i] ^ key[i % key.length];
+    }
+    return new TextDecoder().decode(result);
+  } catch {
+    return '';
+  }
+}
+
 const defaultSettings: Settings = {
   mode: 'remote',
   apiKey: '',
@@ -62,22 +94,18 @@ document.addEventListener('DOMContentLoaded', () => {
       });
   }
 
-  // Load settings — API key from session storage, rest from local storage
-  chrome.storage.local.get(['mode', 'serviceUrl', 'model'], (result: { [key: string]: any }) => {
+  // Load settings — all from local storage, API key is obfuscated
+  chrome.storage.local.get(['mode', 'serviceUrl', 'model', 'apiKeyEncoded'], (result: { [key: string]: any }) => {
     const settings = { ...defaultSettings, ...result };
 
     setMode(settings.mode);
     serviceUrlInput.value = settings.serviceUrl || defaultSettings.serviceUrl;
     modelSelect.value = settings.model || defaultSettings.model;
+    apiKeyInput.value = result.apiKeyEncoded ? deobfuscateApiKey(result.apiKeyEncoded) : '';
 
     if (settings.mode === 'remote') {
       checkConnection(serviceUrlInput.value);
     }
-
-    // Load API key from session storage (cleared on browser close)
-    chrome.storage.session.get(['apiKey'], (sessionResult: { [key: string]: any }) => {
-      apiKeyInput.value = sessionResult.apiKey || '';
-    });
   });
 
   // Mode Switching
@@ -144,32 +172,27 @@ document.addEventListener('DOMContentLoaded', () => {
       }
     }
 
-    // Store API key separately in session storage (cleared on browser close)
+    // Store API key encoded in local storage (persistent, obfuscated)
     const { apiKey, ...persistentSettings } = settings;
-    chrome.storage.session.set({ apiKey }, () => {
+    const storageData = {
+      ...persistentSettings,
+      apiKeyEncoded: apiKey ? obfuscateApiKey(apiKey) : ''
+    };
+
+    chrome.storage.local.set(storageData, () => {
       if (chrome.runtime.lastError) {
         statusRow.style.display = 'flex';
-        statusText.textContent = 'Error saving API key';
+        statusText.textContent = 'Error saving settings';
         statusRow.classList.add('error');
         setTimeout(() => { statusRow.style.display = 'none'; statusRow.classList.remove('error'); }, 2000);
         return;
       }
 
-      chrome.storage.local.set(persistentSettings, () => {
-        if (chrome.runtime.lastError) {
-          statusRow.style.display = 'flex';
-          statusText.textContent = 'Error saving settings';
-          statusRow.classList.add('error');
-          setTimeout(() => { statusRow.style.display = 'none'; statusRow.classList.remove('error'); }, 2000);
-          return;
-        }
-
-        statusRow.style.display = 'flex';
-        statusText.textContent = 'Settings saved';
-        saveBtn.textContent = 'Saved!';
-        saveBtn.classList.add('saved');
-        setTimeout(() => { statusRow.style.display = 'none'; saveBtn.textContent = 'Save Settings'; saveBtn.classList.remove('saved'); }, 2000);
-      });
+      statusRow.style.display = 'flex';
+      statusText.textContent = 'Settings saved';
+      saveBtn.textContent = 'Saved!';
+      saveBtn.classList.add('saved');
+      setTimeout(() => { statusRow.style.display = 'none'; saveBtn.textContent = 'Save Settings'; saveBtn.classList.remove('saved'); }, 2000);
     });
   });
 });

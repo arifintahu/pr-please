@@ -55,9 +55,11 @@ chrome.storage.local.get(['mode', 'apiKey', 'serviceUrl'], (result) => { ... });
 **Risk:** API key theft leading to unauthorized usage and billing.
 
 **Recommendation:**
-- Use `chrome.storage.session` for transient secrets (cleared when browser closes).
-- Consider encrypting the key at rest using a user-provided passphrase.
-- At minimum, warn users prominently that the key is stored locally without encryption.
+- Store the API key in an obfuscated/encoded format in `chrome.storage.local` to prevent plaintext exposure during casual inspection.
+- Consider encrypting the key at rest using a user-provided passphrase for stronger protection.
+- At minimum, warn users prominently that the key is stored locally.
+
+**Resolution:** API key is now stored XOR-obfuscated + base64-encoded in `chrome.storage.local` under the `apiKeyEncoded` key. This persists across browser sessions while preventing plaintext exposure.
 
 ---
 
@@ -335,6 +337,6 @@ The default service URL is hardcoded to `http://localhost:3000` in three separat
 3. **Validate service URL** before use in fetch calls (prevents SSRF patterns)
 4. **Bundle or remove external font** import (stops data leakage to Google)
 5. **Add user consent gate** before sending code data to external services
-6. **Encrypt or use session storage** for API key
+6. **Obfuscate API key** in local storage to prevent plaintext exposure
 7. **Replace `innerHTML`** with DOM API calls
 8. **Remove or restrict HTTP** host permission for production

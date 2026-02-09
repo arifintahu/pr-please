@@ -2,6 +2,38 @@
 
 const DEFAULT_SERVICE_URL = 'http://localhost:3000';
 
+// Simple XOR-based obfuscation for API key storage.
+// Not encryption — prevents plaintext exposure in storage inspection.
+const OBFUSCATION_KEY = 'PrPlease2024ExtKey';
+
+function obfuscateApiKey(plaintext: string): string {
+  const bytes = new TextEncoder().encode(plaintext);
+  const key = new TextEncoder().encode(OBFUSCATION_KEY);
+  const result = new Uint8Array(bytes.length);
+  for (let i = 0; i < bytes.length; i++) {
+    result[i] = bytes[i] ^ key[i % key.length];
+  }
+  return btoa(String.fromCharCode(...result));
+}
+
+function deobfuscateApiKey(encoded: string): string {
+  try {
+    const decoded = atob(encoded);
+    const bytes = new Uint8Array(decoded.length);
+    for (let i = 0; i < decoded.length; i++) {
+      bytes[i] = decoded.charCodeAt(i);
+    }
+    const key = new TextEncoder().encode(OBFUSCATION_KEY);
+    const result = new Uint8Array(bytes.length);
+    for (let i = 0; i < bytes.length; i++) {
+      result[i] = bytes[i] ^ key[i % key.length];
+    }
+    return new TextDecoder().decode(result);
+  } catch {
+    return '';
+  }
+}
+
 // ── Icon Helpers ──
 // Create SVG elements via DOM API instead of innerHTML to prevent injection risks.
 function createSvgIcon(pathData: string, transform?: string): SVGSVGElement {
@@ -545,18 +577,14 @@ function openSettingsModal() {
   modalOverlay.appendChild(modal);
   document.body.appendChild(modalOverlay);
 
-  // Load Settings — API key from session storage, rest from local
-  chrome.storage.local.get(['mode', 'serviceUrl', 'model'], (res) => {
+  // Load Settings — all from local storage, API key is obfuscated
+  chrome.storage.local.get(['mode', 'serviceUrl', 'model', 'apiKeyEncoded'], (res) => {
     const mode = res.mode || 'remote';
     updateModeUI(mode);
 
     serviceUrlInput.value = res.serviceUrl || DEFAULT_SERVICE_URL;
     modelSelect.value = res.model || 'gemini-2.5-flash';
-
-    // Load API key from session storage
-    chrome.storage.session.get(['apiKey'], (sessionRes) => {
-      apiKeyInput.value = sessionRes.apiKey || '';
-    });
+    apiKeyInput.value = res.apiKeyEncoded ? deobfuscateApiKey(res.apiKeyEncoded) : '';
   });
 
   // Events
@@ -605,17 +633,16 @@ function saveSettings() {
   const model = (document.getElementById('prp-model-select') as HTMLSelectElement).value;
   const apiKey = (document.getElementById('prp-api-key') as HTMLInputElement).value;
 
-  // H2: Store API key in session storage, other settings in local storage
-  chrome.storage.session.set({ apiKey }, () => {
-    chrome.storage.local.set({ mode, serviceUrl, model }, () => {
-      const btn = document.getElementById('prp-save-btn');
-      if (btn) {
-        btn.textContent = 'Saved!';
-        setTimeout(() => {
-          closeSettingsModal();
-        }, 1000);
-      }
-    });
+  // Store API key encoded in local storage (persistent, obfuscated)
+  const apiKeyEncoded = apiKey ? obfuscateApiKey(apiKey) : '';
+  chrome.storage.local.set({ mode, serviceUrl, model, apiKeyEncoded }, () => {
+    const btn = document.getElementById('prp-save-btn');
+    if (btn) {
+      btn.textContent = 'Saved!';
+      setTimeout(() => {
+        closeSettingsModal();
+      }, 1000);
+    }
   });
 }
 
