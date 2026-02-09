@@ -63,6 +63,42 @@ body {
 
 .settings-title svg { width: 18px; height: 18px; fill: var(--accent-green); }
 
+.header-actions {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.btn-star {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 4px 10px;
+  font-size: 12px;
+  font-weight: 500;
+  font-family: var(--font-ui);
+  color: var(--text-secondary);
+  background: var(--bg-secondary);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  text-decoration: none;
+  cursor: pointer;
+  transition: all 150ms;
+  line-height: 1;
+}
+
+.btn-star:hover {
+  color: var(--accent-orange);
+  border-color: var(--accent-orange);
+  background: rgba(210,153,34,0.1);
+}
+
+.btn-star svg {
+  width: 14px;
+  height: 14px;
+  fill: currentColor;
+}
+
 .btn-close {
   display: flex;
   align-items: center;
