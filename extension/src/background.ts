@@ -1,5 +1,40 @@
 import { GoogleGenerativeAI } from '@google/generative-ai';
 
+const DEFAULT_SERVICE_URL = 'http://localhost:3000';
+const ALLOWED_URL_SCHEMES = ['http:', 'https:'];
+
+// Simple XOR-based obfuscation for API key storage.
+// Not encryption — prevents plaintext exposure in storage inspection.
+const OBFUSCATION_KEY = 'PrPlease2024ExtKey';
+
+function obfuscateApiKey(plaintext: string): string {
+  const bytes = new TextEncoder().encode(plaintext);
+  const key = new TextEncoder().encode(OBFUSCATION_KEY);
+  const result = new Uint8Array(bytes.length);
+  for (let i = 0; i < bytes.length; i++) {
+    result[i] = bytes[i] ^ key[i % key.length];
+  }
+  return btoa(String.fromCharCode(...result));
+}
+
+function deobfuscateApiKey(encoded: string): string {
+  try {
+    const decoded = atob(encoded);
+    const bytes = new Uint8Array(decoded.length);
+    for (let i = 0; i < decoded.length; i++) {
+      bytes[i] = decoded.charCodeAt(i);
+    }
+    const key = new TextEncoder().encode(OBFUSCATION_KEY);
+    const result = new Uint8Array(bytes.length);
+    for (let i = 0; i < bytes.length; i++) {
+      result[i] = bytes[i] ^ key[i % key.length];
+    }
+    return new TextDecoder().decode(result);
+  } catch {
+    return '';
+  }
+}
+
 interface GenerateRequest {
   action: 'GENERATE_PR';
   commits: string[];
@@ -10,6 +45,19 @@ interface Settings {
   mode: 'local' | 'remote';
   apiKey: string;
   serviceUrl: string;
+}
+
+function validateUrl(url: string): string {
+  try {
+    const parsed = new URL(url);
+    if (!ALLOWED_URL_SCHEMES.includes(parsed.protocol)) {
+      throw new Error(`Invalid URL scheme: ${parsed.protocol}. Only HTTP and HTTPS are allowed.`);
+    }
+    return parsed.href;
+  } catch (e: any) {
+    if (e.message.startsWith('Invalid URL scheme')) throw e;
+    throw new Error('Invalid service URL format.');
+  }
 }
 
 chrome.runtime.onMessage.addListener((request: GenerateRequest, _sender: chrome.runtime.MessageSender, sendResponse: (response?: any) => void) => {
@@ -119,11 +167,11 @@ function filterDiff(diff: string): string {
 
 async function getSettings(): Promise<Settings> {
   return new Promise((resolve) => {
-    chrome.storage.local.get(['mode', 'apiKey', 'serviceUrl'], (result: { [key: string]: any }) => {
+    chrome.storage.local.get(['mode', 'apiKeyEncoded', 'serviceUrl'], (result: { [key: string]: any }) => {
       resolve({
         mode: result.mode || 'local',
-        apiKey: result.apiKey || '',
-        serviceUrl: result.serviceUrl || 'http://localhost:3000'
+        apiKey: result.apiKeyEncoded ? deobfuscateApiKey(result.apiKeyEncoded) : '',
+        serviceUrl: result.serviceUrl || DEFAULT_SERVICE_URL
       });
     });
   });
@@ -144,11 +192,21 @@ async function generateLocal(commits: string[], diff: string, apiKey: string) {
 
   const result = await jsonModel.generateContent(prompt);
   const response = await result.response;
-  return JSON.parse(response.text());
+  let parsed: any;
+  try {
+    parsed = JSON.parse(response.text());
+  } catch {
+    throw new Error('The AI returned an invalid response. Please try again.');
+  }
+  if (!parsed.title || !parsed.description) {
+    throw new Error('The AI response is missing required title or description fields.');
+  }
+  return parsed;
 }
 
 async function generateRemote(commits: string[], diff: string, serviceUrl: string) {
-  const url = serviceUrl.endsWith('/') ? `${serviceUrl}generate` : `${serviceUrl}/generate`;
+  const validatedBase = validateUrl(serviceUrl);
+  const url = validatedBase.endsWith('/') ? `${validatedBase}generate` : `${validatedBase}/generate`;
   
   const headers: Record<string, string> = {
     'Content-Type': 'application/json'

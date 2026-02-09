@@ -5,14 +5,16 @@
   "description": "Generate PR titles and descriptions using AI.",
   "permissions": [
     "storage",
-    "activeTab",
-    "scripting"
+    "activeTab"
   ],
   "host_permissions": [
-    "https://github.com/*",
-    "http://localhost:3000/*",
-    "https://generativelanguage.googleapis.com/*"
+    "https://github.com/*/*/pull/*",
+    "https://github.com/*/*/compare/*",
+    "https://generativelanguage.googleapis.com/v1beta/models/*"
   ],
+  "content_security_policy": {
+    "extension_pages": "script-src 'self'; object-src 'none'"
+  },
   "action": {
     "default_popup": "src/popup.html",
     "default_icon": {

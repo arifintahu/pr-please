@@ -1,21 +1,91 @@
 // content.ts
 
-// ── Icons ──
-const ICONS = {
-  sparkle: `<svg viewBox="0 0 16 16"><path d="M7.53 1.282a.5.5 0 01.94 0l.478 1.306a7.492 7.492 0 004.464 4.464l1.305.478a.5.5 0 010 .94l-1.305.478a7.492 7.492 0 00-4.464 4.464l-.478 1.305a.5.5 0 01-.94 0l-.478-1.305a7.492 7.492 0 00-4.464-4.464L1.282 8.47a.5.5 0 010-.94l1.306-.478a7.492 7.492 0 004.464-4.464L7.53 1.282z"/></svg>`,
-  gear: `<svg viewBox="0 0 16 16"><path d="M8 0a8.2 8.2 0 01.701.031C9.444.095 9.99.645 10.16 1.29l.035.133.038.146c.07.3.192.578.352.827a1.5 1.5 0 001.323.753c.257 0 .515-.072.745-.2l.13-.073.134-.079c.572-.348 1.29-.295 1.808.137a8.076 8.076 0 011.416 1.42c.425.515.477 1.225.137 1.795l-.082.14-.076.131a1.5 1.5 0 00.554 2.07c.249.16.527.282.827.352l.146.038.133.035c.646.17 1.196.716 1.26 1.459a8.2 8.2 0 010 1.402c-.064.743-.614 1.289-1.26 1.459l-.133.035-.146.038a2.88 2.88 0 00-.827.352 1.5 1.5 0 00-.554 2.07l.076.131.082.14c.34.57.288 1.28-.137 1.795a8.076 8.076 0 01-1.416 1.42c-.518.432-1.236.485-1.808.137l-.134-.079-.13-.073a1.5 1.5 0 00-2.068.553c-.16.25-.282.528-.352.828l-.038.146-.035.133c-.17.645-.716 1.195-1.459 1.259a8.2 8.2 0 01-1.402 0c-.743-.064-1.289-.614-1.459-1.26l-.035-.132-.038-.146a2.88 2.88 0 00-.352-.828 1.5 1.5 0 00-2.068-.553l-.13.073-.134.079c-.572.348-1.29.295-1.808-.137a8.076 8.076 0 01-1.416-1.42c-.425-.515-.477-1.225-.137-1.795l.082-.14.076-.131a1.5 1.5 0 00-.554-2.07 2.88 2.88 0 00-.827-.352l-.146-.038-.133-.035C.645 9.444.095 8.898.031 8.155a8.2 8.2 0 010-1.402C.095 6.01.645 5.464 1.29 5.294l.133-.035.146-.038c.3-.07.578-.192.827-.352a1.5 1.5 0 00.554-2.07l-.076-.131-.082-.14c-.34-.57-.288-1.28.137-1.795A8.076 8.076 0 014.346.333c.518-.432 1.236-.485 1.808-.137l.134.079.13.073a1.5 1.5 0 002.068-.553c.16-.25.282-.528.352-.828l.038-.146.035-.133C9.081.143 9.627-.407 10.37-.469zM8 5.5a2.5 2.5 0 100 5 2.5 2.5 0 000-5z" transform="scale(0.72) translate(3,3)"/></svg>`,
-  spinner: `<svg viewBox="0 0 16 16"><circle cx="8" cy="8" r="6" fill="none" stroke="currentColor" stroke-width="2" stroke-dasharray="20 12" /></svg>`,
-  success: `<svg viewBox="0 0 16 16"><path d="M13.78 4.22a.75.75 0 010 1.06l-7.25 7.25a.75.75 0 01-1.06 0L2.22 9.28a.75.75 0 011.06-1.06L6 10.94l6.72-6.72a.75.75 0 011.06 0z"/></svg>`,
-  error: `<svg viewBox="0 0 16 16"><path d="M3.72 3.72a.75.75 0 011.06 0L8 6.94l3.22-3.22a.75.75 0 111.06 1.06L9.06 8l3.22 3.22a.75.75 0 11-1.06 1.06L8 9.06l-3.22 3.22a.75.75 0 01-1.06-1.06L6.94 8 3.72 4.78a.75.75 0 010-1.06z"/></svg>`,
-  close: `<svg viewBox="0 0 16 16"><path d="M3.72 3.72a.75.75 0 011.06 0L8 6.94l3.22-3.22a.75.75 0 111.06 1.06L9.06 8l3.22 3.22a.75.75 0 11-1.06 1.06L8 9.06l-3.22 3.22a.75.75 0 01-1.06-1.06L6.94 8 3.72 4.78a.75.75 0 010-1.06z"/></svg>`,
-  service: `<svg viewBox="0 0 16 16"><path d="M1.5 8a6.5 6.5 0 1113 0 6.5 6.5 0 01-13 0zM8 0a8 8 0 100 16A8 8 0 008 0zM6.379 5.227A.25.25 0 006 5.442v5.117a.25.25 0 00.379.214l4.264-2.559a.25.25 0 000-.428L6.379 5.227z" transform="scale(0.85) translate(1.2,1.2)"/></svg>`,
-  local: `<svg viewBox="0 0 16 16"><path d="M8.75 1.75a.75.75 0 00-1.5 0v5.69L5.03 5.22a.75.75 0 00-1.06 1.06l3.5 3.5a.75.75 0 001.06 0l3.5-3.5a.75.75 0 00-1.06-1.06L8.75 7.44V1.75z" transform="scale(0.85) translate(1.2,1.2)"/></svg>`
+const DEFAULT_SERVICE_URL = 'http://localhost:3000';
+
+// Simple XOR-based obfuscation for API key storage.
+// Not encryption — prevents plaintext exposure in storage inspection.
+const OBFUSCATION_KEY = 'PrPlease2024ExtKey';
+
+function obfuscateApiKey(plaintext: string): string {
+  const bytes = new TextEncoder().encode(plaintext);
+  const key = new TextEncoder().encode(OBFUSCATION_KEY);
+  const result = new Uint8Array(bytes.length);
+  for (let i = 0; i < bytes.length; i++) {
+    result[i] = bytes[i] ^ key[i % key.length];
+  }
+  return btoa(String.fromCharCode(...result));
+}
+
+function deobfuscateApiKey(encoded: string): string {
+  try {
+    const decoded = atob(encoded);
+    const bytes = new Uint8Array(decoded.length);
+    for (let i = 0; i < decoded.length; i++) {
+      bytes[i] = decoded.charCodeAt(i);
+    }
+    const key = new TextEncoder().encode(OBFUSCATION_KEY);
+    const result = new Uint8Array(bytes.length);
+    for (let i = 0; i < bytes.length; i++) {
+      result[i] = bytes[i] ^ key[i % key.length];
+    }
+    return new TextDecoder().decode(result);
+  } catch {
+    return '';
+  }
+}
+
+// ── Icon Helpers ──
+// Create SVG elements via DOM API instead of innerHTML to prevent injection risks.
+function createSvgIcon(pathData: string, transform?: string): SVGSVGElement {
+  const svg = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
+  svg.setAttribute('viewBox', '0 0 16 16');
+  const path = document.createElementNS('http://www.w3.org/2000/svg', 'path');
+  path.setAttribute('d', pathData);
+  if (transform) path.setAttribute('transform', transform);
+  svg.appendChild(path);
+  return svg;
+}
+
+function createSpinnerIcon(): SVGSVGElement {
+  const svg = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
+  svg.setAttribute('viewBox', '0 0 16 16');
+  const circle = document.createElementNS('http://www.w3.org/2000/svg', 'circle');
+  circle.setAttribute('cx', '8');
+  circle.setAttribute('cy', '8');
+  circle.setAttribute('r', '6');
+  circle.setAttribute('fill', 'none');
+  circle.setAttribute('stroke', 'currentColor');
+  circle.setAttribute('stroke-width', '2');
+  circle.setAttribute('stroke-dasharray', '20 12');
+  svg.appendChild(circle);
+  return svg;
+}
+
+const ICON_PATHS = {
+  sparkle: 'M7.53 1.282a.5.5 0 01.94 0l.478 1.306a7.492 7.492 0 004.464 4.464l1.305.478a.5.5 0 010 .94l-1.305.478a7.492 7.492 0 00-4.464 4.464l-.478 1.305a.5.5 0 01-.94 0l-.478-1.305a7.492 7.492 0 00-4.464-4.464L1.282 8.47a.5.5 0 010-.94l1.306-.478a7.492 7.492 0 004.464-4.464L7.53 1.282z',
+  gear: 'M8 0a8.2 8.2 0 01.701.031C9.444.095 9.99.645 10.16 1.29l.035.133.038.146c.07.3.192.578.352.827a1.5 1.5 0 001.323.753c.257 0 .515-.072.745-.2l.13-.073.134-.079c.572-.348 1.29-.295 1.808.137a8.076 8.076 0 011.416 1.42c.425.515.477 1.225.137 1.795l-.082.14-.076.131a1.5 1.5 0 00.554 2.07c.249.16.527.282.827.352l.146.038.133.035c.646.17 1.196.716 1.26 1.459a8.2 8.2 0 010 1.402c-.064.743-.614 1.289-1.26 1.459l-.133.035-.146.038a2.88 2.88 0 00-.827.352 1.5 1.5 0 00-.554 2.07l.076.131.082.14c.34.57.288 1.28-.137 1.795a8.076 8.076 0 01-1.416 1.42c-.518.432-1.236.485-1.808.137l-.134-.079-.13-.073a1.5 1.5 0 00-2.068.553c-.16.25-.282.528-.352.828l-.038.146-.035.133c-.17.645-.716 1.195-1.459 1.259a8.2 8.2 0 01-1.402 0c-.743-.064-1.289-.614-1.459-1.26l-.035-.132-.038-.146a2.88 2.88 0 00-.352-.828 1.5 1.5 0 00-2.068-.553l-.13.073-.134.079c-.572.348-1.29.295-1.808-.137a8.076 8.076 0 01-1.416-1.42c-.425-.515-.477-1.225-.137-1.795l.082-.14.076-.131a1.5 1.5 0 00-.554-2.07 2.88 2.88 0 00-.827-.352l-.146-.038-.133-.035C.645 9.444.095 8.898.031 8.155a8.2 8.2 0 010-1.402C.095 6.01.645 5.464 1.29 5.294l.133-.035.146-.038c.3-.07.578-.192.827-.352a1.5 1.5 0 00.554-2.07l-.076-.131-.082-.14c-.34-.57-.288-1.28.137-1.795A8.076 8.076 0 014.346.333c.518-.432 1.236-.485 1.808-.137l.134.079.13.073a1.5 1.5 0 002.068-.553c.16-.25.282-.528.352-.828l.038-.146.035-.133C9.081.143 9.627-.407 10.37-.469zM8 5.5a2.5 2.5 0 100 5 2.5 2.5 0 000-5z',
+  success: 'M13.78 4.22a.75.75 0 010 1.06l-7.25 7.25a.75.75 0 01-1.06 0L2.22 9.28a.75.75 0 011.06-1.06L6 10.94l6.72-6.72a.75.75 0 011.06 0z',
+  error: 'M3.72 3.72a.75.75 0 011.06 0L8 6.94l3.22-3.22a.75.75 0 111.06 1.06L9.06 8l3.22 3.22a.75.75 0 11-1.06 1.06L8 9.06l-3.22 3.22a.75.75 0 01-1.06-1.06L6.94 8 3.72 4.78a.75.75 0 010-1.06z',
+  close: 'M3.72 3.72a.75.75 0 011.06 0L8 6.94l3.22-3.22a.75.75 0 111.06 1.06L9.06 8l3.22 3.22a.75.75 0 11-1.06 1.06L8 9.06l-3.22 3.22a.75.75 0 01-1.06-1.06L6.94 8 3.72 4.78a.75.75 0 010-1.06z',
+  service: 'M1.5 8a6.5 6.5 0 1113 0 6.5 6.5 0 01-13 0zM8 0a8 8 0 100 16A8 8 0 008 0zM6.379 5.227A.25.25 0 006 5.442v5.117a.25.25 0 00.379.214l4.264-2.559a.25.25 0 000-.428L6.379 5.227z',
+  local: 'M8.75 1.75a.75.75 0 00-1.5 0v5.69L5.03 5.22a.75.75 0 00-1.06 1.06l3.5 3.5a.75.75 0 001.06 0l3.5-3.5a.75.75 0 00-1.06-1.06L8.75 7.44V1.75z',
 };
 
-// ── Styles ──
-const INJECTED_STYLES = `
-  @import url('https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&display=swap');
+const ICON_TRANSFORMS: Record<string, string> = {
+  gear: 'scale(0.72) translate(3,3)',
+  service: 'scale(0.85) translate(1.2,1.2)',
+  local: 'scale(0.85) translate(1.2,1.2)',
+};
 
+function icon(name: keyof typeof ICON_PATHS): SVGSVGElement {
+  if (name === 'sparkle' || name === 'success' || name === 'error' || name === 'close') {
+    return createSvgIcon(ICON_PATHS[name]);
+  }
+  return createSvgIcon(ICON_PATHS[name], ICON_TRANSFORMS[name]);
+}
+
+// ── Styles (M4: removed external Google Fonts import, using system fonts only) ──
+const INJECTED_STYLES = `
   .pr-please-wrapper {
     display: flex;
     flex-direction: column;
@@ -49,7 +119,7 @@ const INJECTED_STYLES = `
 
   .prp-btn:hover { background: #2ea043; }
   .prp-btn:active { transform: scale(0.98); }
-  
+
   .prp-btn svg { width: 16px; height: 16px; fill: currentColor; }
 
   .prp-btn.loading {
@@ -58,7 +128,7 @@ const INJECTED_STYLES = `
     pointer-events: none;
     color: #8b949e;
   }
-  
+
   .prp-btn.loading svg { animation: prp-spin 1s linear infinite; }
 
   .prp-btn.success { background: #238636; }
@@ -118,7 +188,7 @@ const INJECTED_STYLES = `
 
   .prp-secondary { background: #21262d; color: #e6edf3; border: 1px solid #30363d; }
   .prp-secondary:hover { background: #30363d; }
-  
+
   .prp-danger { background: transparent; color: #f85149; }
   .prp-danger:hover { background: rgba(248,81,73,0.1); }
 
@@ -198,7 +268,7 @@ const INJECTED_STYLES = `
     justify-content: center;
     gap: 6px;
   }
-  
+
   .prp-toggle-opt svg { width: 14px; height: 14px; fill: currentColor; }
 
   .prp-toggle-opt.active {
@@ -208,7 +278,7 @@ const INJECTED_STYLES = `
 
   .prp-form-group { margin-bottom: 16px; }
   .prp-label { display: block; font-size: 13px; font-weight: 500; color: #8b949e; margin-bottom: 6px; }
-  
+
   .prp-input, .prp-select {
     width: 100%;
     padding: 8px 12px;
@@ -217,7 +287,7 @@ const INJECTED_STYLES = `
     border-radius: 6px;
     color: #e6edf3;
     font-size: 13px;
-    font-family: "IBM Plex Mono", monospace;
+    font-family: ui-monospace, SFMono-Regular, "SF Mono", Menlo, Consolas, "Liberation Mono", monospace;
     outline: none;
   }
 
@@ -235,7 +305,7 @@ const INJECTED_STYLES = `
     cursor: pointer;
     margin-top: 10px;
   }
-  
+
   .prp-save-btn:hover { background: #2ea043; }
 `;
 
@@ -247,45 +317,107 @@ document.head.appendChild(styleEl);
 // ── State ──
 let generatedData: { title: string; description: string } | null = null;
 
-// ── Inject Logic ──
+// ── DOM Helper ──
+function el<K extends keyof HTMLElementTagNameMap>(
+  tag: K,
+  attrs?: Record<string, string>,
+  children?: (Node | string)[]
+): HTMLElementTagNameMap[K] {
+  const elem = document.createElement(tag);
+  if (attrs) {
+    for (const [k, v] of Object.entries(attrs)) {
+      elem.setAttribute(k, v);
+    }
+  }
+  if (children) {
+    for (const child of children) {
+      if (typeof child === 'string') {
+        elem.appendChild(document.createTextNode(child));
+      } else {
+        elem.appendChild(child);
+      }
+    }
+  }
+  return elem;
+}
+
+// ── Inject Logic (M3: uses DOM API instead of innerHTML) ──
 function injectButton() {
   const titleInput = document.querySelector('input[name="pull_request[title]"]');
   if (!titleInput || document.getElementById('pr-please-wrapper')) return;
 
-  const wrapper = document.createElement('div');
-  wrapper.id = 'pr-please-wrapper';
-  wrapper.className = 'pr-please-wrapper';
-  
-  wrapper.innerHTML = `
-    <div class="prp-row">
-      <button type="button" class="prp-btn" id="prp-generate-btn">
-        ${ICONS.sparkle} Generate with AI
-      </button>
-      <button type="button" class="prp-settings-btn" id="prp-settings-btn" title="Settings">
-        ${ICONS.gear}
-      </button>
-    </div>
-    <div id="prp-result-bar" class="prp-result-bar" style="display: none;"></div>
-  `;
+  const wrapper = el('div', { id: 'pr-please-wrapper', class: 'pr-please-wrapper' });
 
-  // Insert after the title input's parent container usually works best in GitHub's layout
-  // GitHub's title input is often inside a dl > dd or div. 
-  // Let's try to find the best spot. The original code appended to titleInput.parentElement.
+  const row = el('div', { class: 'prp-row' });
+
+  const generateBtn = el('button', { type: 'button', class: 'prp-btn', id: 'prp-generate-btn' }, [
+    icon('sparkle'), ' Generate with AI'
+  ]);
+
+  const settingsBtn = el('button', { type: 'button', class: 'prp-settings-btn', id: 'prp-settings-btn', title: 'Settings' }, [
+    icon('gear')
+  ]);
+
+  row.appendChild(generateBtn);
+  row.appendChild(settingsBtn);
+
+  const resultBar = el('div', { id: 'prp-result-bar', class: 'prp-result-bar', style: 'display: none;' });
+
+  wrapper.appendChild(row);
+  wrapper.appendChild(resultBar);
+
   titleInput.parentElement?.appendChild(wrapper);
 
-  // Bind Events
-  document.getElementById('prp-generate-btn')?.addEventListener('click', handleGenerate);
-  document.getElementById('prp-settings-btn')?.addEventListener('click', openSettingsModal);
+  generateBtn.addEventListener('click', handleGenerate);
+  settingsBtn.addEventListener('click', openSettingsModal);
+}
+
+// ── H3: Consent gate — confirm before sending code to external service ──
+function getUserConsent(mode: string, endpoint: string): boolean {
+  const target = mode === 'local' ? 'Google Generative AI API' : endpoint;
+  return confirm(
+    `PR-Please will send your PR diff and commit messages to:\n\n${target}\n\nThis may include proprietary source code. Continue?`
+  );
 }
 
 async function handleGenerate(e: Event) {
-  const btn = e.target as HTMLButtonElement;
-  const originalHtml = btn.innerHTML;
-  
+  const btn = e.currentTarget as HTMLButtonElement;
+
+  // Capture original child nodes for restore
+  const originalChildren: Node[] = [];
+  btn.childNodes.forEach(n => originalChildren.push(n.cloneNode(true)));
+
+  function restoreBtn() {
+    btn.textContent = '';
+    originalChildren.forEach(n => btn.appendChild(n.cloneNode(true)));
+    btn.disabled = false;
+    btn.classList.remove('loading', 'success', 'error');
+  }
+
+  function setBtnState(iconName: 'sparkle' | 'success' | 'error' | 'close', text: string, svgFactory?: () => SVGSVGElement) {
+    btn.textContent = '';
+    btn.appendChild(svgFactory ? svgFactory() : icon(iconName));
+    btn.appendChild(document.createTextNode(` ${text}`));
+  }
+
+  // H3: Consent gate — check mode and confirm with user
+  const settings = await new Promise<{ mode: string; serviceUrl: string }>((resolve) => {
+    chrome.storage.local.get(['mode', 'serviceUrl'], (res) => {
+      resolve({
+        mode: res.mode || 'remote',
+        serviceUrl: res.serviceUrl || DEFAULT_SERVICE_URL,
+      });
+    });
+  });
+
+  if (!getUserConsent(settings.mode, settings.serviceUrl)) {
+    return;
+  }
+
   // Loading State
   btn.disabled = true;
   btn.classList.add('loading');
-  btn.innerHTML = `${ICONS.spinner} Generating...`;
+  setBtnState('sparkle', 'Generating...', createSpinnerIcon);
   hideResultBar();
 
   try {
@@ -307,47 +439,52 @@ async function handleGenerate(e: Event) {
     generatedData = response;
     showResultBar();
     btn.classList.add('success');
-    btn.innerHTML = `${ICONS.success} Generated!`;
-    
-    // Reset button state after a delay
-    setTimeout(() => {
-      btn.classList.remove('success', 'loading');
-      btn.disabled = false;
-      btn.innerHTML = originalHtml;
-    }, 3000);
+    setBtnState('success', 'Generated!');
 
+    setTimeout(restoreBtn, 3000);
   } catch (err: any) {
-    console.error(err);
+    // L1: Log full error for debugging, show generic message to user
+    console.error('PR-Please generation error:', err);
     btn.classList.add('error');
-    btn.innerHTML = `${ICONS.error} Failed`;
-    alert(`Generation failed: ${err.message}`);
-    
-    setTimeout(() => {
-      btn.classList.remove('error', 'loading');
-      btn.disabled = false;
-      btn.innerHTML = originalHtml;
-    }, 3000);
+    setBtnState('error', 'Failed');
+
+    // Show a safe, generic message — do not expose raw error details
+    const safeMessage = (err.message && !err.message.includes('<'))
+      ? err.message
+      : 'An unexpected error occurred. Check the console for details.';
+    alert(`Generation failed: ${safeMessage}`);
+
+    setTimeout(restoreBtn, 3000);
   }
 }
 
 function showResultBar() {
   const bar = document.getElementById('prp-result-bar');
   if (!bar) return;
-  
-  bar.innerHTML = `
-    ${ICONS.success}
-    <span>Title & description ready</span>
-    <div class="prp-actions">
-      <button class="prp-action-btn prp-primary" id="prp-apply">Apply</button>
-      <button class="prp-action-btn prp-secondary" id="prp-preview">Preview</button>
-      <button class="prp-action-btn prp-danger" id="prp-dismiss">${ICONS.close}</button>
-    </div>
-  `;
+
+  // M3: Build result bar with DOM API
+  bar.textContent = '';
+
+  bar.appendChild(icon('success'));
+  bar.appendChild(el('span', {}, ['Title & description ready']));
+
+  const actions = el('div', { class: 'prp-actions' });
+
+  const applyBtn = el('button', { class: 'prp-action-btn prp-primary', id: 'prp-apply' }, ['Apply']);
+  const previewBtn = el('button', { class: 'prp-action-btn prp-secondary', id: 'prp-preview' }, ['Preview']);
+  const dismissBtn = el('button', { class: 'prp-action-btn prp-danger', id: 'prp-dismiss' }, [icon('close')]);
+
+  actions.appendChild(applyBtn);
+  actions.appendChild(previewBtn);
+  actions.appendChild(dismissBtn);
+  bar.appendChild(actions);
   bar.style.display = 'flex';
 
-  document.getElementById('prp-apply')?.addEventListener('click', applyResult);
-  document.getElementById('prp-preview')?.addEventListener('click', () => alert('Preview:\n\n' + generatedData?.title + '\n\n' + generatedData?.description));
-  document.getElementById('prp-dismiss')?.addEventListener('click', hideResultBar);
+  applyBtn.addEventListener('click', applyResult);
+  previewBtn.addEventListener('click', () => {
+    alert('Preview:\n\n' + (generatedData?.title ?? '') + '\n\n' + (generatedData?.description ?? ''));
+  });
+  dismissBtn.addEventListener('click', hideResultBar);
 }
 
 function hideResultBar() {
@@ -357,7 +494,7 @@ function hideResultBar() {
 
 function applyResult() {
   if (!generatedData) return;
-  
+
   const titleInput = document.querySelector('input[name="pull_request[title]"]') as HTMLInputElement;
   const bodyInput = document.querySelector('textarea[name="pull_request[body]"]') as HTMLTextAreaElement;
 
@@ -365,88 +502,101 @@ function applyResult() {
     titleInput.value = generatedData.title;
     titleInput.dispatchEvent(new Event('input', { bubbles: true }));
   }
-  
+
   if (bodyInput && generatedData.description) {
     bodyInput.value = generatedData.description;
     bodyInput.dispatchEvent(new Event('input', { bubbles: true }));
   }
-  
+
   hideResultBar();
 }
 
-// ── Settings Modal Logic ──
+// ── Settings Modal Logic (M3: built with DOM API) ──
 function openSettingsModal() {
   if (document.getElementById('prp-settings-modal')) return;
 
-  const modalOverlay = document.createElement('div');
-  modalOverlay.id = 'prp-settings-modal';
-  modalOverlay.className = 'prp-modal-overlay';
-  
-  modalOverlay.innerHTML = `
-    <div class="prp-modal">
-      <div class="prp-modal-header">
-        <div class="prp-modal-title">${ICONS.sparkle} PR-Please Settings</div>
-        <button class="prp-close-btn" id="prp-modal-close">${ICONS.close}</button>
-      </div>
-      <div class="prp-modal-body">
-        <div class="prp-label">Generation Mode</div>
-        <div class="prp-toggle">
-          <button class="prp-toggle-opt active" id="prp-mode-remote" data-mode="remote">${ICONS.service} Service</button>
-          <button class="prp-toggle-opt" id="prp-mode-local" data-mode="local">${ICONS.local} Local</button>
-        </div>
+  const modalOverlay = el('div', { id: 'prp-settings-modal', class: 'prp-modal-overlay' });
 
-        <div id="prp-remote-fields">
-          <div class="prp-form-group">
-            <label class="prp-label">Service URL</label>
-            <input class="prp-input" id="prp-service-url" value="http://localhost:3000">
-          </div>
-        </div>
+  const modal = el('div', { class: 'prp-modal' });
 
-        <div id="prp-local-fields" style="display:none">
-          <div class="prp-form-group">
-            <label class="prp-label">Model</label>
-            <select class="prp-select" id="prp-model-select">
-              <option value="gemini-2.5-flash">gemini-2.5-flash</option>
-              <option value="gemini-1.5-pro">gemini-1.5-pro</option>
-            </select>
-          </div>
-          <div class="prp-form-group">
-            <label class="prp-label">API Key</label>
-            <input class="prp-input" type="password" id="prp-api-key" placeholder="Gemini API Key">
-          </div>
-        </div>
+  // Header
+  const header = el('div', { class: 'prp-modal-header' });
+  const titleDiv = el('div', { class: 'prp-modal-title' }, [icon('sparkle'), ' PR-Please Settings']);
+  const closeBtn = el('button', { class: 'prp-close-btn', id: 'prp-modal-close' }, [icon('close')]);
+  header.appendChild(titleDiv);
+  header.appendChild(closeBtn);
 
-        <button class="prp-save-btn" id="prp-save-btn">Save Settings</button>
-      </div>
-    </div>
-  `;
+  // Body
+  const body = el('div', { class: 'prp-modal-body' });
 
+  const modeLabel = el('div', { class: 'prp-label' }, ['Generation Mode']);
+  body.appendChild(modeLabel);
+
+  const toggle = el('div', { class: 'prp-toggle' });
+  const modeRemoteBtn = el('button', { class: 'prp-toggle-opt active', id: 'prp-mode-remote', 'data-mode': 'remote' }, [icon('service'), ' Service']);
+  const modeLocalBtn = el('button', { class: 'prp-toggle-opt', id: 'prp-mode-local', 'data-mode': 'local' }, [icon('local'), ' Local']);
+  toggle.appendChild(modeRemoteBtn);
+  toggle.appendChild(modeLocalBtn);
+  body.appendChild(toggle);
+
+  // Remote fields
+  const remoteFields = el('div', { id: 'prp-remote-fields' });
+  const remoteGroup = el('div', { class: 'prp-form-group' });
+  remoteGroup.appendChild(el('label', { class: 'prp-label' }, ['Service URL']));
+  const serviceUrlInput = el('input', { class: 'prp-input', id: 'prp-service-url', value: DEFAULT_SERVICE_URL });
+  remoteGroup.appendChild(serviceUrlInput);
+  remoteFields.appendChild(remoteGroup);
+  body.appendChild(remoteFields);
+
+  // Local fields
+  const localFields = el('div', { id: 'prp-local-fields', style: 'display:none' });
+
+  const modelGroup = el('div', { class: 'prp-form-group' });
+  modelGroup.appendChild(el('label', { class: 'prp-label' }, ['Model']));
+  const modelSelect = el('select', { class: 'prp-select', id: 'prp-model-select' });
+  for (const m of ['gemini-2.5-flash', 'gemini-1.5-pro']) {
+    const opt = el('option', { value: m }, [m]);
+    modelSelect.appendChild(opt);
+  }
+  modelGroup.appendChild(modelSelect);
+  localFields.appendChild(modelGroup);
+
+  const apiKeyGroup = el('div', { class: 'prp-form-group' });
+  apiKeyGroup.appendChild(el('label', { class: 'prp-label' }, ['API Key']));
+  const apiKeyInput = el('input', { class: 'prp-input', type: 'password', id: 'prp-api-key', placeholder: 'Gemini API Key' });
+  apiKeyGroup.appendChild(apiKeyInput);
+  localFields.appendChild(apiKeyGroup);
+
+  body.appendChild(localFields);
+
+  const saveBtn = el('button', { class: 'prp-save-btn', id: 'prp-save-btn' }, ['Save Settings']);
+  body.appendChild(saveBtn);
+
+  modal.appendChild(header);
+  modal.appendChild(body);
+  modalOverlay.appendChild(modal);
   document.body.appendChild(modalOverlay);
 
-  // Load Settings
-  chrome.storage.local.get(['mode', 'serviceUrl', 'model', 'apiKey'], (res) => {
+  // Load Settings — all from local storage, API key is obfuscated
+  chrome.storage.local.get(['mode', 'serviceUrl', 'model', 'apiKeyEncoded'], (res) => {
     const mode = res.mode || 'remote';
     updateModeUI(mode);
-    
-    const serviceUrlInput = document.getElementById('prp-service-url') as HTMLInputElement;
-    const modelSelect = document.getElementById('prp-model-select') as HTMLSelectElement;
-    const apiKeyInput = document.getElementById('prp-api-key') as HTMLInputElement;
 
-    if (serviceUrlInput) serviceUrlInput.value = res.serviceUrl || 'http://localhost:3000';
-    if (modelSelect) modelSelect.value = res.model || 'gemini-2.5-flash';
-    if (apiKeyInput) apiKeyInput.value = res.apiKey || '';
+    serviceUrlInput.value = res.serviceUrl || DEFAULT_SERVICE_URL;
+    modelSelect.value = res.model || 'gemini-2.5-flash';
+    apiKeyInput.value = res.apiKeyEncoded ? deobfuscateApiKey(res.apiKeyEncoded) : '';
   });
 
   // Events
-  document.getElementById('prp-modal-close')?.addEventListener('click', closeSettingsModal);
+  closeBtn.addEventListener('click', closeSettingsModal);
   modalOverlay.addEventListener('click', (e) => {
     if (e.target === modalOverlay) closeSettingsModal();
   });
 
-  document.getElementById('prp-mode-remote')?.addEventListener('click', () => updateModeUI('remote'));
-  document.getElementById('prp-mode-local')?.addEventListener('click', () => updateModeUI('local'));
-  
-  document.getElementById('prp-save-btn')?.addEventListener('click', saveSettings);
+  modeRemoteBtn.addEventListener('click', () => updateModeUI('remote'));
+  modeLocalBtn.addEventListener('click', () => updateModeUI('local'));
+
+  saveBtn.addEventListener('click', saveSettings);
 }
 
 function updateModeUI(mode: string) {
@@ -466,8 +616,7 @@ function updateModeUI(mode: string) {
     if (remoteFields) remoteFields.style.display = 'none';
     if (localFields) localFields.style.display = 'block';
   }
-  
-  // Store current mode in data attr of parent to read later
+
   const toggle = document.querySelector('.prp-toggle');
   if (toggle) toggle.setAttribute('data-current-mode', mode);
 }
@@ -479,12 +628,14 @@ function closeSettingsModal() {
 function saveSettings() {
   const toggle = document.querySelector('.prp-toggle');
   const mode = toggle?.getAttribute('data-current-mode') || 'remote';
-  
+
   const serviceUrl = (document.getElementById('prp-service-url') as HTMLInputElement).value;
   const model = (document.getElementById('prp-model-select') as HTMLSelectElement).value;
   const apiKey = (document.getElementById('prp-api-key') as HTMLInputElement).value;
 
-  chrome.storage.local.set({ mode, serviceUrl, model, apiKey }, () => {
+  // Store API key encoded in local storage (persistent, obfuscated)
+  const apiKeyEncoded = apiKey ? obfuscateApiKey(apiKey) : '';
+  chrome.storage.local.set({ mode, serviceUrl, model, apiKeyEncoded }, () => {
     const btn = document.getElementById('prp-save-btn');
     if (btn) {
       btn.textContent = 'Saved!';
@@ -495,9 +646,11 @@ function saveSettings() {
   });
 }
 
-// Observer
+// L3: Debounced MutationObserver
+let observerTimer: ReturnType<typeof setTimeout> | null = null;
 const observer = new MutationObserver(() => {
-  injectButton();
+  if (observerTimer) clearTimeout(observerTimer);
+  observerTimer = setTimeout(() => injectButton(), 200);
 });
 observer.observe(document.body, { childList: true, subtree: true });
 
