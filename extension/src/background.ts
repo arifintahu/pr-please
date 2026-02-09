@@ -34,16 +34,58 @@ async function handleGeneratePR(request: GenerateRequest) {
 
   // 2. Filter Diff (Privacy & Token Limits)
   const filteredDiff = filterDiff(fullDiff);
+  const cleanedDiff = cleanGitDiff(filteredDiff);
 
   // 3. Get Settings
   const settings = await getSettings();
 
   // 4. Call LLM
   if (settings.mode === 'local') {
-    return await generateLocal(commits, filteredDiff, settings.apiKey);
+    return await generateLocal(commits, cleanedDiff, settings.apiKey);
   } else {
-    return await generateRemote(commits, filteredDiff, settings.serviceUrl);
+    return await generateRemote(commits, cleanedDiff, settings.serviceUrl);
   }
+}
+
+// Comprehensive regex patterns for cleaning git diff output 
+const cleaningPatterns = { 
+  // Remove git diff headers 
+  gitHeaders: /^(diff --git |index |--- |(\+\+\+ )).*$/gm, 
+  
+  // Remove line number indicators 
+  lineNumbers: /^@@.*@@.*$/gm, 
+  
+  // Remove truncation markers 
+  truncations: /^\.\.\. \(truncated \d+ lines\).*$/gm, 
+  
+  // Remove leading +/- from diff lines (keep content) 
+  diffMarkers: /^([+\-])/gm, 
+  
+  // Remove "new file mode" and similar metadata 
+  fileMetadata: /^(new file mode|deleted file mode|similarity index|rename from|rename to|copy from|copy to).*$/gm, 
+  
+  // Remove excessive blank lines (3+ consecutive newlines) 
+  excessiveNewlines: /\n{3,}/g, 
+  
+  // Remove leading/trailing whitespace per line 
+  lineWhitespace: /^[ \t]+|[ \t]+$/gm 
+}; 
+
+// Function to clean the text 
+function cleanGitDiff(text: string) { 
+  let cleaned = text; 
+  
+  // Apply each cleaning pattern 
+  cleaned = cleaned.replace(cleaningPatterns.gitHeaders, ''); 
+  cleaned = cleaned.replace(cleaningPatterns.lineNumbers, ''); 
+  cleaned = cleaned.replace(cleaningPatterns.truncations, ''); 
+  cleaned = cleaned.replace(cleaningPatterns.fileMetadata, ''); 
+  cleaned = cleaned.replace(cleaningPatterns.diffMarkers, ''); 
+  cleaned = cleaned.replace(cleaningPatterns.excessiveNewlines, '\n\n'); 
+  cleaned = cleaned.replace(cleaningPatterns.lineWhitespace, ''); 
+  
+  // Trim final result 
+  return cleaned.trim(); 
 }
 
 function filterDiff(diff: string): string {
@@ -96,7 +138,7 @@ async function generateLocal(commits: string[], diff: string, apiKey: string) {
   
   // Request JSON output
   const jsonModel = genAI.getGenerativeModel({ 
-      model: "gemini-1.5-flash",
+      model: "gemini-2.5-flash",
       generationConfig: { responseMimeType: "application/json" } as any
   });
 
