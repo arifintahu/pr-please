@@ -127,7 +127,34 @@ document.addEventListener('DOMContentLoaded', () => {
       model: modelSelect.value
     };
 
+    if (currentMode === 'local') {
+      if (!settings.apiKey) {
+        // Show error status
+        statusRow.style.display = 'flex';
+        statusText.textContent = 'Please enter an API key';
+        statusRow.classList.add('error');
+        
+        setTimeout(() => {
+          statusRow.style.display = 'none';
+          statusRow.classList.remove('error');
+        }, 2000);
+        return;
+      }
+    }
+
     chrome.storage.local.set(settings, () => {
+      if (chrome.runtime.lastError) {
+        statusRow.style.display = 'flex';
+        statusText.textContent = 'Error saving settings';
+        statusRow.classList.add('error');
+        
+        setTimeout(() => {
+          statusRow.style.display = 'none';
+          statusRow.classList.remove('error');
+        }, 2000);
+        return;
+      }
+
       // Show saved status
       statusRow.style.display = 'flex';
       statusText.textContent = 'Settings saved';

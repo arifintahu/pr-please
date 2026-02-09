@@ -285,6 +285,15 @@ body {
   justify-content: center;
 }
 
+.status-row.error {
+  color: var(--danger);
+}
+
+.status-row.error .status-dot {
+  background: var(--danger);
+  box-shadow: 0 0 6px var(--danger);
+}
+
 .status-dot {
   width: 6px; height: 6px;
   border-radius: 50%;
