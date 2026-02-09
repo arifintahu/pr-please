@@ -1,111 +1,298 @@
+@import url('https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&display=swap');
+
+:root {
+  --bg-canvas: #010409;
+  --bg-primary: #0d1117;
+  --bg-secondary: #161b22;
+  --bg-tertiary: #21262d;
+  --bg-overlay: rgba(1,4,9,0.7);
+  --border: #30363d;
+  --border-focus: #58a6ff;
+  --text-primary: #e6edf3;
+  --text-secondary: #8b949e;
+  --text-muted: #484f58;
+  --accent-green: #238636;
+  --accent-green-hover: #2ea043;
+  --accent-green-subtle: rgba(35,134,54,0.15);
+  --accent-blue: #58a6ff;
+  --accent-blue-subtle: rgba(88,166,255,0.1);
+  --accent-orange: #d29922;
+  --danger: #f85149;
+  --danger-subtle: rgba(248,81,73,0.1);
+  --radius-sm: 6px;
+  --radius-md: 10px;
+  --radius-lg: 14px;
+  --shadow-popup: 0 12px 48px rgba(0,0,0,0.55), 0 0 0 1px var(--border);
+  --font-ui: -apple-system, BlinkMacSystemFont, "Segoe UI", "Noto Sans", Helvetica, Arial, sans-serif;
+  --font-mono: "IBM Plex Mono", "SFMono-Regular", Consolas, monospace;
+}
+
+* { margin: 0; padding: 0; box-sizing: border-box; }
+
 body {
-  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, 'Open Sans', 'Helvetica Neue', sans-serif;
-  width: 350px;
-  padding: 15px;
-  margin: 0;
-  background-color: #f6f8fa;
-  color: #24292f;
+  font-family: var(--font-ui);
+  background: var(--bg-canvas);
+  color: var(--text-primary);
+  /* Popup width/height constraints */
+  width: 360px;
+  min-height: 400px; 
 }
 
-.container {
+/* ── Settings Popup ── */
+.settings-popup {
+  width: 100%;
+  height: 100%;
+  background: var(--bg-primary);
+  /* In extension popup, we don't need border/shadow/radius on the body usually, 
+     but let's keep it clean or just use the body bg. 
+     The prototype has a floating card look. 
+     In chrome popup, the window itself is the boundary. 
+     Let's just fill the space. */
   display: flex;
   flex-direction: column;
-  gap: 15px;
 }
 
-h2 {
-  margin: 0;
-  font-size: 18px;
-  border-bottom: 1px solid #d0d7de;
-  padding-bottom: 10px;
-}
-
-.form-group {
-  display: flex;
-  flex-direction: column;
-  gap: 5px;
-}
-
-label {
-  font-weight: 600;
-  font-size: 13px;
-}
-
-input[type="text"],
-input[type="password"] {
-  padding: 5px 10px;
-  border: 1px solid #d0d7de;
-  border-radius: 6px;
-  font-size: 14px;
-  outline: none;
-}
-
-input[type="text"]:focus,
-input[type="password"]:focus {
-  border-color: #0969da;
-  box-shadow: 0 0 0 3px rgba(9, 105, 218, 0.3);
-}
-
-.radio-group {
-  display: flex;
-  gap: 15px;
-}
-
-.radio-group label {
-  font-weight: normal;
+.settings-header {
+  padding: 16px 20px;
   display: flex;
   align-items: center;
-  gap: 5px;
+  justify-content: space-between;
+  border-bottom: 1px solid var(--border);
+}
+
+.settings-title {
+  font-size: 15px;
+  font-weight: 600;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.settings-title svg { width: 18px; height: 18px; fill: var(--accent-green); }
+
+.btn-close {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px; height: 28px;
+  background: transparent;
+  border: none;
+  border-radius: var(--radius-sm);
+  color: var(--text-secondary);
   cursor: pointer;
+  transition: all 150ms;
 }
 
-.settings-section {
+.btn-close:hover {
+  background: var(--bg-tertiary);
+  color: var(--text-primary);
+}
+
+.btn-close svg { width: 16px; height: 16px; fill: currentColor; }
+
+.settings-body { padding: 20px; flex: 1; }
+
+/* ── Segmented Toggle ── */
+.field-label {
+  font-size: 12px;
+  font-weight: 500;
+  color: var(--text-secondary);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  margin-bottom: 10px;
+}
+
+.segmented-toggle {
   display: flex;
-  flex-direction: column;
-  gap: 10px;
+  background: var(--bg-secondary);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  padding: 3px;
+  gap: 2px;
+  margin-bottom: 20px;
+  position: relative;
 }
 
-.hidden {
-  display: none;
+.seg-option {
+  flex: 1;
+  padding: 8px 12px;
+  text-align: center;
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--text-secondary);
+  border: none;
+  background: transparent;
+  border-radius: 4px;
+  cursor: pointer;
+  font-family: var(--font-ui);
+  transition: all 200ms;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  z-index: 1;
 }
 
-.hint {
-  margin: 0;
+.seg-option.active {
+  color: #fff;
+  background: var(--accent-green);
+  box-shadow: 0 1px 3px rgba(0,0,0,0.2);
+}
+
+.seg-option:not(.active):hover {
+  color: var(--text-primary);
+  background: var(--bg-tertiary);
+}
+
+.seg-option svg { width: 14px; height: 14px; fill: currentColor; }
+
+/* ── Form fields ── */
+.form-group {
+  margin-bottom: 18px;
+  animation: fadeField 250ms ease-out;
+}
+
+@keyframes fadeField {
+  from { opacity: 0; transform: translateY(4px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+.form-label {
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--text-secondary);
+  margin-bottom: 6px;
+  display: block;
+}
+
+.input-wrapper {
+  position: relative;
+}
+
+.form-input {
+  width: 100%;
+  padding: 8px 12px;
+  background: var(--bg-secondary);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  color: var(--text-primary);
+  font-size: 13px;
+  font-family: var(--font-mono);
+  outline: none;
+  transition: border-color 150ms, box-shadow 150ms;
+}
+
+.form-input:focus {
+  border-color: var(--border-focus);
+  box-shadow: 0 0 0 3px var(--accent-blue-subtle);
+}
+
+.form-input::placeholder { color: var(--text-muted); }
+
+.input-icon {
+  position: absolute;
+  right: 10px;
+  top: 50%;
+  transform: translateY(-50%);
+  color: var(--text-muted);
+  cursor: pointer;
+  transition: color 150ms;
+}
+
+.input-icon:hover { color: var(--text-secondary); }
+.input-icon svg { width: 16px; height: 16px; fill: currentColor; }
+
+.form-hint {
   font-size: 11px;
-  color: #57606a;
-}
-
-.actions {
+  color: var(--text-muted);
+  margin-top: 6px;
   display: flex;
-  justify-content: flex-end;
+  align-items: center;
+  gap: 4px;
 }
 
-button {
-  background-color: #2da44e;
-  color: white;
-  border: 1px solid rgba(27, 31, 35, 0.15);
-  border-radius: 6px;
-  padding: 5px 16px;
+.form-hint svg { width: 12px; height: 12px; fill: currentColor; }
+
+.form-select {
+  width: 100%;
+  padding: 8px 36px 8px 12px;
+  background: var(--bg-secondary);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  color: var(--text-primary);
+  font-size: 13px;
+  font-family: var(--font-mono);
+  outline: none;
+  cursor: pointer;
+  appearance: none;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' fill='%238b949e' viewBox='0 0 16 16'%3E%3Cpath d='M4.427 7.427l3.396 3.396a.25.25 0 00.354 0l3.396-3.396A.25.25 0 0011.396 7H4.604a.25.25 0 00-.177.427z'/%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right 12px center;
+  transition: border-color 150ms, box-shadow 150ms;
+}
+
+.form-select:focus {
+  border-color: var(--border-focus);
+  box-shadow: 0 0 0 3px var(--accent-blue-subtle);
+}
+
+/* ── Divider ── */
+.divider {
+  height: 1px;
+  background: var(--border);
+  margin: 20px 0;
+}
+
+/* ── Save Button ── */
+.btn-save {
+  width: 100%;
+  padding: 10px;
+  background: var(--accent-green);
+  color: #fff;
+  border: none;
+  border-radius: var(--radius-sm);
   font-size: 14px;
   font-weight: 500;
+  font-family: var(--font-ui);
   cursor: pointer;
-  transition: background-color 0.2s;
+  transition: all 150ms;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
 }
 
-button:hover {
-  background-color: #2c974b;
+.btn-save:hover {
+  background: var(--accent-green-hover);
+  box-shadow: 0 0 0 3px var(--accent-green-subtle);
 }
 
-.status {
+.btn-save:active { transform: scale(0.98); }
+
+.btn-save.saved {
+  background: var(--accent-green);
+}
+
+/* ── Status indicator ── */
+.status-row {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin-top: 14px;
   font-size: 12px;
-  text-align: center;
-  min-height: 16px;
+  color: var(--text-muted);
+  justify-content: center;
 }
 
-.status.success {
-  color: #2da44e;
+.status-dot {
+  width: 6px; height: 6px;
+  border-radius: 50%;
+  background: var(--accent-green);
+  box-shadow: 0 0 6px var(--accent-green);
+  animation: pulse 2s ease-in-out infinite;
 }
 
-.status.error {
-  color: #cf222e;
+@keyframes pulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.5; }
 }

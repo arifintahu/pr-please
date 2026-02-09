@@ -7,43 +7,73 @@
   <link rel="stylesheet" href="popup.css">
 </head>
 <body>
-  <div class="container">
-    <h2>PR-Please Settings</h2>
-    
-    <div class="form-group">
-      <label>Generation Mode:</label>
-      <div class="radio-group">
-        <label>
-          <input type="radio" name="mode" value="local" checked>
-          Local (Own Key)
-        </label>
-        <label>
-          <input type="radio" name="mode" value="remote">
-          Remote Service
-        </label>
+  <div class="settings-popup">
+    <div class="settings-header">
+      <span class="settings-title">
+        <svg viewBox="0 0 16 16"><path d="M7.53 1.282a.5.5 0 01.94 0l.478 1.306a7.492 7.492 0 004.464 4.464l1.305.478a.5.5 0 010 .94l-1.305.478a7.492 7.492 0 00-4.464 4.464l-.478 1.305a.5.5 0 01-.94 0l-.478-1.305a7.492 7.492 0 00-4.464-4.464L1.282 8.47a.5.5 0 010-.94l1.306-.478a7.492 7.492 0 004.464-4.464L7.53 1.282z"/></svg>
+        PR-Please
+      </span>
+      <!-- Close button is usually not needed in extension popup as clicking outside closes it, but we can keep it or remove it. keeping it for visual consistency with prototype but making it close window -->
+      <button class="btn-close" id="btnClose">
+        <svg viewBox="0 0 16 16"><path d="M3.72 3.72a.75.75 0 011.06 0L8 6.94l3.22-3.22a.75.75 0 111.06 1.06L9.06 8l3.22 3.22a.75.75 0 11-1.06 1.06L8 9.06l-3.22 3.22a.75.75 0 01-1.06-1.06L6.94 8 3.72 4.78a.75.75 0 010-1.06z"/></svg>
+      </button>
+    </div>
+    <div class="settings-body">
+      <div class="field-label">Generation Mode</div>
+      <div class="segmented-toggle">
+        <button class="seg-option active" id="modeService" data-value="remote">
+          <svg viewBox="0 0 16 16"><path d="M1.5 8a6.5 6.5 0 1113 0 6.5 6.5 0 01-13 0zM8 0a8 8 0 100 16A8 8 0 008 0zM6.379 5.227A.25.25 0 006 5.442v5.117a.25.25 0 00.379.214l4.264-2.559a.25.25 0 000-.428L6.379 5.227z" transform="scale(0.85) translate(1.2,1.2)"/></svg>
+          Service
+        </button>
+        <button class="seg-option" id="modeLocal" data-value="local">
+          <svg viewBox="0 0 16 16"><path d="M8.75 1.75a.75.75 0 00-1.5 0v5.69L5.03 5.22a.75.75 0 00-1.06 1.06l3.5 3.5a.75.75 0 001.06 0l3.5-3.5a.75.75 0 00-1.06-1.06L8.75 7.44V1.75z" transform="scale(0.85) translate(1.2,1.2)"/></svg>
+          Local
+        </button>
+      </div>
+
+      <!-- Service Fields -->
+      <div id="serviceFields">
+        <div class="form-group">
+          <label class="form-label">Service URL</label>
+          <input class="form-input" id="serviceUrl" value="http://localhost:3000" />
+        </div>
+      </div>
+
+      <!-- Local Fields -->
+      <div id="localFields" style="display: none;">
+        <div class="form-group">
+          <label class="form-label">Model</label>
+          <select class="form-select" id="modelSelect">
+            <option value="gemini-2.5-flash">gemini-2.5-flash</option>
+            <option value="gemini-1.5-pro">gemini-1.5-pro</option>
+            <option value="gemini-1.0-pro">gemini-1.0-pro</option>
+          </select>
+        </div>
+
+        <div class="form-group">
+          <label class="form-label">API Key</label>
+          <div class="input-wrapper">
+            <input class="form-input" id="apiKey" type="password" placeholder="Enter your Gemini API Key" style="padding-right:36px" />
+            <span class="input-icon" id="toggleApiKey">
+              <svg viewBox="0 0 16 16"><path d="M8 2c1.981 0 3.671.992 4.933 2.078 1.27 1.091 2.187 2.345 2.637 3.023a1.62 1.62 0 010 1.798c-.45.678-1.367 1.932-2.637 3.023C11.671 13.008 9.981 14 8 14c-1.981 0-3.671-.992-4.933-2.078C1.797 10.831.88 9.577.43 8.899a1.62 1.62 0 010-1.798c.45-.678 1.367-1.932 2.637-3.023C4.329 2.992 6.019 2 8 2zM1.679 7.932a.12.12 0 000 .136c.411.622 1.241 1.75 2.366 2.717C5.176 11.758 6.527 12.5 8 12.5c1.473 0 2.825-.742 3.955-1.715 1.124-.967 1.954-2.096 2.366-2.717a.12.12 0 000-.136c-.412-.621-1.242-1.75-2.366-2.717C10.824 4.242 9.473 3.5 8 3.5c-1.473 0-2.824.742-3.955 1.715-1.124.967-1.954 2.096-2.366 2.717zM8 10a2 2 0 110-4 2 2 0 010 4z"/></svg>
+            </span>
+          </div>
+          <div class="form-hint">
+            <svg viewBox="0 0 16 16"><path d="M4 4a4 4 0 018 0v2h.25c.966 0 1.75.784 1.75 1.75v5.5A1.75 1.75 0 0112.25 15h-8.5A1.75 1.75 0 012 13.25v-5.5C2 6.784 2.784 6 3.75 6H4V4zm8.25 3.5h-8.5a.25.25 0 00-.25.25v5.5c0 .138.112.25.25.25h8.5a.25.25 0 00.25-.25v-5.5a.25.25 0 00-.25-.25zM10.5 6V4a2.5 2.5 0 10-5 0v2h5z" transform="scale(0.75) translate(0,0)"/></svg>
+            Stored locally in your browser
+          </div>
+        </div>
+      </div>
+
+      <div class="divider"></div>
+
+      <button class="btn-save" id="saveBtn">Save Settings</button>
+      
+      <div id="statusRow" class="status-row" style="display: none;">
+        <span class="status-dot"></span>
+        <span id="statusText">Settings saved</span>
       </div>
     </div>
-
-    <div id="local-settings" class="settings-section">
-      <div class="form-group">
-        <label for="apiKey">Gemini API Key:</label>
-        <input type="password" id="apiKey" placeholder="Enter your Gemini API Key">
-        <p class="hint">Key is stored locally in your browser.</p>
-      </div>
-    </div>
-
-    <div id="remote-settings" class="settings-section hidden">
-      <div class="form-group">
-        <label for="serviceUrl">Service URL:</label>
-        <input type="text" id="serviceUrl" value="http://localhost:3000">
-      </div>
-    </div>
-
-    <div class="actions">
-      <button id="saveBtn">Save Settings</button>
-    </div>
-    
-    <div id="status" class="status"></div>
   </div>
   <script type="module" src="popup.ts"></script>
 </body>

@@ -2,73 +2,100 @@ interface Settings {
   mode: 'local' | 'remote';
   apiKey: string;
   serviceUrl: string;
+  model: string;
 }
 
 const defaultSettings: Settings = {
-  mode: 'local',
+  mode: 'remote', // Default to remote/service as per design doc
   apiKey: '',
-  serviceUrl: 'http://localhost:3000'
+  serviceUrl: 'http://localhost:3000',
+  model: 'gemini-2.5-flash'
 };
 
 document.addEventListener('DOMContentLoaded', () => {
-  const modeRadios = document.querySelectorAll('input[name="mode"]') as NodeListOf<HTMLInputElement>;
-  const apiKeyInput = document.getElementById('apiKey') as HTMLInputElement;
+  // Elements
+  const modeServiceBtn = document.getElementById('modeService') as HTMLButtonElement;
+  const modeLocalBtn = document.getElementById('modeLocal') as HTMLButtonElement;
+  const serviceFields = document.getElementById('serviceFields') as HTMLDivElement;
+  const localFields = document.getElementById('localFields') as HTMLDivElement;
+  
   const serviceUrlInput = document.getElementById('serviceUrl') as HTMLInputElement;
-  const localSettings = document.getElementById('local-settings') as HTMLDivElement;
-  const remoteSettings = document.getElementById('remote-settings') as HTMLDivElement;
+  const modelSelect = document.getElementById('modelSelect') as HTMLSelectElement;
+  const apiKeyInput = document.getElementById('apiKey') as HTMLInputElement;
+  const toggleApiKeyBtn = document.getElementById('toggleApiKey') as HTMLSpanElement;
+  
   const saveBtn = document.getElementById('saveBtn') as HTMLButtonElement;
-  const statusDiv = document.getElementById('status') as HTMLDivElement;
+  const btnClose = document.getElementById('btnClose') as HTMLButtonElement;
+  
+  const statusRow = document.getElementById('statusRow') as HTMLDivElement;
+  const statusText = document.getElementById('statusText') as HTMLSpanElement;
+
+  let currentMode: 'local' | 'remote' = defaultSettings.mode;
 
   // Load settings
-  chrome.storage.local.get(['mode', 'apiKey', 'serviceUrl'], (result: { [key: string]: any }) => {
+  chrome.storage.local.get(['mode', 'apiKey', 'serviceUrl', 'model'], (result: { [key: string]: any }) => {
     const settings = { ...defaultSettings, ...result };
     
     // Set Mode
-    modeRadios.forEach(radio => {
-      if (radio.value === settings.mode) {
-        radio.checked = true;
-      }
-    });
-    toggleSettings(settings.mode);
+    setMode(settings.mode);
 
     // Set Values
+    serviceUrlInput.value = settings.serviceUrl || defaultSettings.serviceUrl;
     apiKeyInput.value = settings.apiKey || '';
-    serviceUrlInput.value = settings.serviceUrl || 'http://localhost:3000';
+    modelSelect.value = settings.model || defaultSettings.model;
   });
 
-  // Toggle Visibility
-  function toggleSettings(mode: string) {
-    if (mode === 'local') {
-      localSettings.classList.remove('hidden');
-      remoteSettings.classList.add('hidden');
+  // Mode Switching
+  function setMode(mode: 'local' | 'remote') {
+    currentMode = mode;
+    if (mode === 'remote') {
+      modeServiceBtn.classList.add('active');
+      modeLocalBtn.classList.remove('active');
+      serviceFields.style.display = 'block';
+      localFields.style.display = 'none';
     } else {
-      localSettings.classList.add('hidden');
-      remoteSettings.classList.remove('hidden');
+      modeServiceBtn.classList.remove('active');
+      modeLocalBtn.classList.add('active');
+      serviceFields.style.display = 'none';
+      localFields.style.display = 'block';
     }
   }
 
-  modeRadios.forEach(radio => {
-    radio.addEventListener('change', (e) => {
-      const target = e.target as HTMLInputElement;
-      toggleSettings(target.value);
-    });
+  modeServiceBtn.addEventListener('click', () => setMode('remote'));
+  modeLocalBtn.addEventListener('click', () => setMode('local'));
+
+  // Toggle API Key Visibility
+  toggleApiKeyBtn.addEventListener('click', () => {
+    apiKeyInput.type = apiKeyInput.type === 'password' ? 'text' : 'password';
   });
+
+  // Close Popup
+  if (btnClose) {
+    btnClose.addEventListener('click', () => {
+      window.close();
+    });
+  }
 
   // Save Settings
   saveBtn.addEventListener('click', () => {
-    const mode = document.querySelector('input[name="mode"]:checked') as HTMLInputElement;
     const settings: Settings = {
-      mode: mode.value as 'local' | 'remote',
+      mode: currentMode,
       apiKey: apiKeyInput.value.trim(),
-      serviceUrl: serviceUrlInput.value.trim()
+      serviceUrl: serviceUrlInput.value.trim(),
+      model: modelSelect.value
     };
 
     chrome.storage.local.set(settings, () => {
-      statusDiv.textContent = 'Settings saved!';
-      statusDiv.className = 'status success';
+      // Show saved status
+      statusRow.style.display = 'flex';
+      statusText.textContent = 'Settings saved';
+      saveBtn.textContent = 'Saved!';
+      saveBtn.classList.add('saved');
+
       setTimeout(() => {
-        statusDiv.textContent = '';
-        statusDiv.className = 'status';
+        statusRow.style.display = 'none';
+        saveBtn.textContent = 'Save Settings';
+        saveBtn.classList.remove('saved');
       }, 2000);
     });
   });

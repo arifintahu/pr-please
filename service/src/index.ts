@@ -106,9 +106,9 @@ Diff:
 ${diff.substring(0, 30000)}
     `;
 
-    // gemini-1.5-flash supports responseMimeType: "application/json"
+    // gemini-2.5-flash supports responseMimeType: "application/json"
     const jsonModel = genAI.getGenerativeModel({ 
-      model: process.env.GEMINI_MODEL || "gemini-1.5-flash",
+      model: process.env.GEMINI_MODEL || "gemini-2.5-flash",
       generationConfig: { responseMimeType: "application/json" }
     }, requestOptions);
 
