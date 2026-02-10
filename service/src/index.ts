@@ -85,6 +85,7 @@ server.post<{ Body: GenerateRequestBody }>('/generate', async (request, reply) =
     const jsonPrompt = `
 You are a PR assistant. Analyze the code changes and return a JSON object with "title" and "description" fields.
 The "description" field should contain the full markdown body using the template below.
+Return ONLY valid JSON. Do not include markdown formatting like \`\`\`json.
 
 Template:
 # Task
@@ -117,7 +118,11 @@ ${diff.substring(0, MAX_DIFF_LENGTH)}
 
     const jsonResult = await jsonModel.generateContent(jsonPrompt);
     const jsonResponse = await jsonResult.response;
-    const jsonText = jsonResponse.text();
+    let jsonText = jsonResponse.text();
+    
+    // Clean up potential markdown code blocks
+    jsonText = jsonText.replace(/^```json\s*/, '').replace(/\s*```$/, '');
+    
     const data = JSON.parse(jsonText);
 
     // Cache the result

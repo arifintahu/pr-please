@@ -167,7 +167,10 @@ async function generateLocal(commits: string[], diff: string, apiKey: string, mo
   const response = await result.response;
   let parsed: any;
   try {
-    parsed = JSON.parse(response.text());
+    let jsonText = response.text();
+    // Clean up potential markdown code blocks
+    jsonText = jsonText.replace(/^```json\s*/, '').replace(/\s*```$/, '');
+    parsed = JSON.parse(jsonText);
   } catch {
     throw new Error('The AI returned an invalid response. Please try again.');
   }
@@ -220,6 +223,7 @@ function constructPrompt(commits: string[], diff: string): string {
   return `
 You are a PR assistant. Analyze the code changes and return a JSON object with "title" and "description" fields.
 The "description" field should contain the full markdown body using the template below.
+Return ONLY valid JSON. Do not include markdown formatting like \`\`\`json.
 
 Template:
 # Task
