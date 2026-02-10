@@ -222,23 +222,31 @@ async function generateRemote(commits: string[], diff: string, serviceUrl: strin
 function constructPrompt(commits: string[], diff: string): string {
   return `
 You are a PR assistant. Analyze the code changes and return a JSON object with "title" and "description" fields.
-The "description" field should contain the full markdown body using the template below.
-Return ONLY valid JSON. Do not include markdown formatting like \`\`\`json.
 
-Template:
+STRICT OUTPUT RULES:
+1. Return ONLY valid JSON.
+2. Do NOT include markdown formatting like \`\`\`json\` wrapper.
+3. The "description" field must contain the full markdown body.
+
+CONTENT GENERATION RULES:
+- **Title**: Use Conventional Commits format (e.g., "feat: ...", "fix: ...").
+- **Task Section**: Look for issue references (e.g., "fixes #123", "JIRA-456") in the commits. 
+  - IF FOUND: Include a "# Task" section with the link. 
+  - IF NOT FOUND: **OMIT the "# Task" section entirely.** Do not output empty placeholders.
+- **Description**: Summarize the changes clearly. Do not retain the HTML comments () from the template.
+- **Checklist**: Mark items as [x] only if evident in the code (e.g., tests are present in the diff).
+
+Target Markdown Structure for "description":
 # Task
-<!-- Please add link a relevant issue or task -->
+(Only if applicable)
 
 # Description
-<!-- Please include a summary of the change -->
-<!-- Any details that you think are important to review this PR? -->
-<!-- Are there other PRs related to this one? -->
+(Summary of changes and important details)
 
 # How Has This Been Tested?
-<!-- Please describe how you tested your changes -->
+(Description of testing strategy based on code changes)
 
 # Checklist
-<!-- Go over all the following points, and put an x in all the boxes that apply -->
 - [ ] I have performed a self-review of my own code
 - [ ] I have added tests to cover my changes
 
