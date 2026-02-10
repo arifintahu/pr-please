@@ -1,4 +1,4 @@
-import { DEFAULT_SERVICE_URL, obfuscateApiKey, deobfuscateApiKey } from './utils';
+import { DEFAULT_SERVICE_URL, DEFAULT_MODEL, obfuscateApiKey, deobfuscateApiKey } from './utils';
 
 interface Settings {
   mode: 'local' | 'remote';
@@ -11,7 +11,7 @@ const defaultSettings: Settings = {
   mode: 'remote',
   apiKey: '',
   serviceUrl: DEFAULT_SERVICE_URL,
-  model: 'gemini-2.5-flash'
+  model: DEFAULT_MODEL,
 };
 
 document.addEventListener('DOMContentLoaded', () => {

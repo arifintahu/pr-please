@@ -1,7 +1,11 @@
 import { GoogleGenerativeAI } from '@google/generative-ai';
-import { DEFAULT_SERVICE_URL, deobfuscateApiKey } from './utils';
+import { DEFAULT_SERVICE_URL, DEFAULT_MODEL, deobfuscateApiKey } from './utils';
 
 const ALLOWED_URL_SCHEMES = ['http:', 'https:'];
+const TIMEOUT_MS = 60000; // 60 seconds
+const MAX_LINES_PER_FILE = 100;
+const MAX_COMMITS_LENGTH = 50;
+const MAX_DIFF_LENGTH = 30000;
 
 interface GenerateRequest {
   action: 'GENERATE_PR';
@@ -107,7 +111,6 @@ function cleanGitDiff(text: string) {
 
 function filterDiff(diff: string): string {
   const IGNORED_FILES = ['package-lock.json', 'yarn.lock', 'pnpm-lock.yaml', '.env'];
-  const MAX_LINES_PER_FILE = 50;
   
   const files = diff.split('diff --git ');
   const processedFiles = files.map(fileChunk => {
@@ -141,7 +144,7 @@ async function getSettings(): Promise<Settings> {
         mode: result.mode || 'local',
         apiKey: result.apiKeyEncoded ? deobfuscateApiKey(result.apiKeyEncoded) : '',
         serviceUrl: result.serviceUrl || DEFAULT_SERVICE_URL,
-        model: result.model || 'gemini-2.5-flash'
+        model: result.model || DEFAULT_MODEL
       });
     });
   });
@@ -183,13 +186,16 @@ async function generateRemote(commits: string[], diff: string, serviceUrl: strin
   };
   
   const controller = new AbortController();
-  const timeoutId = setTimeout(() => controller.abort(), 60000); // 60s timeout
+  const timeoutId = setTimeout(() => controller.abort(), TIMEOUT_MS);
 
   try {
     const response = await fetch(url, {
       method: 'POST',
       headers,
-      body: JSON.stringify({ commits, diff }),
+      body: JSON.stringify({
+        commits: commits.slice(0, MAX_COMMITS_LENGTH),
+        diff: diff.substring(0, MAX_DIFF_LENGTH),
+      }),
       signal: controller.signal
     });
 
@@ -233,9 +239,9 @@ Template:
 - [ ] I have added tests to cover my changes
 
 Commits:
-${commits.join('\n')}
+${commits.slice(0, MAX_COMMITS_LENGTH).join('\n')}
 
 Diff:
-${diff.substring(0, 30000)}
+${diff.substring(0, MAX_DIFF_LENGTH)}
   `;
 }
