@@ -7,8 +7,6 @@ interface Settings {
   model: string;
 }
 
-
-
 const defaultSettings: Settings = {
   mode: 'remote',
   apiKey: '',
