@@ -370,7 +370,7 @@ async function handleGenerate(e: Event) {
   hideResultBar();
 
   try {
-    const commitElements = document.querySelectorAll('.js-commits-list-item p.commit-title, .commit-message code a');
+    const commitElements = document.querySelectorAll('.js-commits-list-item p.mb-1 a.markdown-title, .commit-message code a');
     const commits = Array.from(commitElements).map(el => el.textContent?.trim()).filter(Boolean) as string[];
     const prUrl = window.location.href.split('?')[0];
 
