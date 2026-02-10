@@ -1,38 +1,5 @@
 // content.ts
-
-const DEFAULT_SERVICE_URL = 'http://localhost:3000';
-
-// Simple XOR-based obfuscation for API key storage.
-// Not encryption — prevents plaintext exposure in storage inspection.
-const OBFUSCATION_KEY = 'PrPlease2024ExtKey';
-
-function obfuscateApiKey(plaintext: string): string {
-  const bytes = new TextEncoder().encode(plaintext);
-  const key = new TextEncoder().encode(OBFUSCATION_KEY);
-  const result = new Uint8Array(bytes.length);
-  for (let i = 0; i < bytes.length; i++) {
-    result[i] = bytes[i] ^ key[i % key.length];
-  }
-  return btoa(String.fromCharCode(...result));
-}
-
-function deobfuscateApiKey(encoded: string): string {
-  try {
-    const decoded = atob(encoded);
-    const bytes = new Uint8Array(decoded.length);
-    for (let i = 0; i < decoded.length; i++) {
-      bytes[i] = decoded.charCodeAt(i);
-    }
-    const key = new TextEncoder().encode(OBFUSCATION_KEY);
-    const result = new Uint8Array(bytes.length);
-    for (let i = 0; i < bytes.length; i++) {
-      result[i] = bytes[i] ^ key[i % key.length];
-    }
-    return new TextDecoder().decode(result);
-  } catch {
-    return '';
-  }
-}
+import { DEFAULT_SERVICE_URL, obfuscateApiKey, deobfuscateApiKey } from './utils';
 
 // ── Icon Helpers ──
 // Create SVG elements via DOM API instead of innerHTML to prevent injection risks.

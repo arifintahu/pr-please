@@ -1,39 +1,7 @@
 import { GoogleGenerativeAI } from '@google/generative-ai';
+import { DEFAULT_SERVICE_URL, deobfuscateApiKey } from './utils';
 
-const DEFAULT_SERVICE_URL = 'http://localhost:3000';
 const ALLOWED_URL_SCHEMES = ['http:', 'https:'];
-
-// Simple XOR-based obfuscation for API key storage.
-// Not encryption — prevents plaintext exposure in storage inspection.
-const OBFUSCATION_KEY = 'PrPlease2024ExtKey';
-
-function obfuscateApiKey(plaintext: string): string {
-  const bytes = new TextEncoder().encode(plaintext);
-  const key = new TextEncoder().encode(OBFUSCATION_KEY);
-  const result = new Uint8Array(bytes.length);
-  for (let i = 0; i < bytes.length; i++) {
-    result[i] = bytes[i] ^ key[i % key.length];
-  }
-  return btoa(String.fromCharCode(...result));
-}
-
-function deobfuscateApiKey(encoded: string): string {
-  try {
-    const decoded = atob(encoded);
-    const bytes = new Uint8Array(decoded.length);
-    for (let i = 0; i < decoded.length; i++) {
-      bytes[i] = decoded.charCodeAt(i);
-    }
-    const key = new TextEncoder().encode(OBFUSCATION_KEY);
-    const result = new Uint8Array(bytes.length);
-    for (let i = 0; i < bytes.length; i++) {
-      result[i] = bytes[i] ^ key[i % key.length];
-    }
-    return new TextDecoder().decode(result);
-  } catch {
-    return '';
-  }
-}
 
 interface GenerateRequest {
   action: 'GENERATE_PR';
