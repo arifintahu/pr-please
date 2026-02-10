@@ -13,6 +13,7 @@ interface Settings {
   mode: 'local' | 'remote';
   apiKey: string;
   serviceUrl: string;
+  model: string;
 }
 
 function validateUrl(url: string): string {
@@ -57,7 +58,7 @@ async function handleGeneratePR(request: GenerateRequest) {
 
   // 4. Call LLM
   if (settings.mode === 'local') {
-    return await generateLocal(commits, cleanedDiff, settings.apiKey);
+    return await generateLocal(commits, cleanedDiff, settings.apiKey, settings.model);
   } else {
     return await generateRemote(commits, cleanedDiff, settings.serviceUrl);
   }
@@ -135,17 +136,18 @@ function filterDiff(diff: string): string {
 
 async function getSettings(): Promise<Settings> {
   return new Promise((resolve) => {
-    chrome.storage.local.get(['mode', 'apiKeyEncoded', 'serviceUrl'], (result: { [key: string]: any }) => {
+    chrome.storage.local.get(['mode', 'apiKeyEncoded', 'serviceUrl', 'model'], (result: { [key: string]: any }) => {
       resolve({
         mode: result.mode || 'local',
         apiKey: result.apiKeyEncoded ? deobfuscateApiKey(result.apiKeyEncoded) : '',
-        serviceUrl: result.serviceUrl || DEFAULT_SERVICE_URL
+        serviceUrl: result.serviceUrl || DEFAULT_SERVICE_URL,
+        model: result.model || 'gemini-2.5-flash'
       });
     });
   });
 }
 
-async function generateLocal(commits: string[], diff: string, apiKey: string) {
+async function generateLocal(commits: string[], diff: string, apiKey: string, model: string) {
   if (!apiKey) throw new Error('Gemini API Key is missing for Local mode.');
 
   const genAI = new GoogleGenerativeAI(apiKey);
@@ -154,7 +156,7 @@ async function generateLocal(commits: string[], diff: string, apiKey: string) {
   
   // Request JSON output
   const jsonModel = genAI.getGenerativeModel({ 
-      model: "gemini-2.5-flash",
+      model: model,
       generationConfig: { responseMimeType: "application/json" } as any
   });
 
