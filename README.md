@@ -107,20 +107,6 @@ Your API key is stored obfuscated in the browser's local storage and persists ac
 5. Review the generated title and description in the result bar.
 6. Click **Apply** to insert them into the form.
 
-## Security
-
-A full security audit has been conducted based on [ChromeAudit](https://github.com/nullenc0de/ChromeAudit) criteria. See [`extension/SECURITY_AUDIT.md`](extension/SECURITY_AUDIT.md) for the detailed report.
-
-Key security measures:
-- **CSP enforced** — `script-src 'self'; object-src 'none'`
-- **Minimal permissions** — Only `storage` and `activeTab`; no `scripting`
-- **Scoped host access** — Narrowed to specific GitHub and Gemini API paths
-- **No `innerHTML`** — All DOM construction uses safe `createElement`/`textContent` APIs
-- **API key obfuscated** — XOR + base64 encoded in `chrome.storage.local`
-- **URL validation** — Service URLs validated with scheme allowlist before fetch
-- **User consent gate** — Confirmation dialog before sending any code data externally
-- **No external resource loading** — System fonts only, no CDN requests
-
 ## License
 
 MIT

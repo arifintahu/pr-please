@@ -57,7 +57,7 @@ const INJECTED_STYLES = `
     display: flex;
     flex-direction: column;
     gap: 8px;
-    margin-left: 8px;
+    margin-top: 8px;
     font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "Noto Sans", Helvetica, Arial, sans-serif;
   }
 
@@ -333,18 +333,14 @@ function injectButton() {
   wrapper.appendChild(row);
   wrapper.appendChild(resultBar);
 
-  titleInput.parentElement?.appendChild(wrapper);
+  // GitHub wraps the input in a <text-expander> element now.
+  // We want to inject AFTER the input (or its wrapper) so it appears below it.
+  const textExpander = titleInput.closest('text-expander');
+  const targetElement = textExpander || titleInput;
+  targetElement.insertAdjacentElement('afterend', wrapper);
 
   generateBtn.addEventListener('click', handleGenerate);
   settingsBtn.addEventListener('click', openSettingsModal);
-}
-
-// ── H3: Consent gate — confirm before sending code to external service ──
-function getUserConsent(mode: string, endpoint: string): boolean {
-  const target = mode === 'local' ? 'Google Generative AI API' : endpoint;
-  return confirm(
-    `PR-Please will send your PR diff and commit messages to:\n\n${target}\n\nThis may include proprietary source code. Continue?`
-  );
 }
 
 async function handleGenerate(e: Event) {
@@ -365,20 +361,6 @@ async function handleGenerate(e: Event) {
     btn.textContent = '';
     btn.appendChild(svgFactory ? svgFactory() : icon(iconName));
     btn.appendChild(document.createTextNode(` ${text}`));
-  }
-
-  // H3: Consent gate — check mode and confirm with user
-  const settings = await new Promise<{ mode: string; serviceUrl: string }>((resolve) => {
-    chrome.storage.local.get(['mode', 'serviceUrl'], (res) => {
-      resolve({
-        mode: res.mode || 'remote',
-        serviceUrl: res.serviceUrl || DEFAULT_SERVICE_URL,
-      });
-    });
-  });
-
-  if (!getUserConsent(settings.mode, settings.serviceUrl)) {
-    return;
   }
 
   // Loading State
