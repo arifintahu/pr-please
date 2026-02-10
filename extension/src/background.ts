@@ -1,39 +1,11 @@
 import { GoogleGenerativeAI } from '@google/generative-ai';
+import { DEFAULT_SERVICE_URL, DEFAULT_MODEL, deobfuscateApiKey } from './utils';
 
-const DEFAULT_SERVICE_URL = 'http://localhost:3000';
 const ALLOWED_URL_SCHEMES = ['http:', 'https:'];
-
-// Simple XOR-based obfuscation for API key storage.
-// Not encryption — prevents plaintext exposure in storage inspection.
-const OBFUSCATION_KEY = 'PrPlease2024ExtKey';
-
-function obfuscateApiKey(plaintext: string): string {
-  const bytes = new TextEncoder().encode(plaintext);
-  const key = new TextEncoder().encode(OBFUSCATION_KEY);
-  const result = new Uint8Array(bytes.length);
-  for (let i = 0; i < bytes.length; i++) {
-    result[i] = bytes[i] ^ key[i % key.length];
-  }
-  return btoa(String.fromCharCode(...result));
-}
-
-function deobfuscateApiKey(encoded: string): string {
-  try {
-    const decoded = atob(encoded);
-    const bytes = new Uint8Array(decoded.length);
-    for (let i = 0; i < decoded.length; i++) {
-      bytes[i] = decoded.charCodeAt(i);
-    }
-    const key = new TextEncoder().encode(OBFUSCATION_KEY);
-    const result = new Uint8Array(bytes.length);
-    for (let i = 0; i < bytes.length; i++) {
-      result[i] = bytes[i] ^ key[i % key.length];
-    }
-    return new TextDecoder().decode(result);
-  } catch {
-    return '';
-  }
-}
+const TIMEOUT_MS = 60000; // 60 seconds
+const MAX_LINES_PER_FILE = 100;
+const MAX_COMMITS_LENGTH = 50;
+const MAX_DIFF_LENGTH = 30000;
 
 interface GenerateRequest {
   action: 'GENERATE_PR';
@@ -45,6 +17,7 @@ interface Settings {
   mode: 'local' | 'remote';
   apiKey: string;
   serviceUrl: string;
+  model: string;
 }
 
 function validateUrl(url: string): string {
@@ -89,7 +62,7 @@ async function handleGeneratePR(request: GenerateRequest) {
 
   // 4. Call LLM
   if (settings.mode === 'local') {
-    return await generateLocal(commits, cleanedDiff, settings.apiKey);
+    return await generateLocal(commits, cleanedDiff, settings.apiKey, settings.model);
   } else {
     return await generateRemote(commits, cleanedDiff, settings.serviceUrl);
   }
@@ -138,7 +111,6 @@ function cleanGitDiff(text: string) {
 
 function filterDiff(diff: string): string {
   const IGNORED_FILES = ['package-lock.json', 'yarn.lock', 'pnpm-lock.yaml', '.env'];
-  const MAX_LINES_PER_FILE = 50;
   
   const files = diff.split('diff --git ');
   const processedFiles = files.map(fileChunk => {
@@ -167,17 +139,18 @@ function filterDiff(diff: string): string {
 
 async function getSettings(): Promise<Settings> {
   return new Promise((resolve) => {
-    chrome.storage.local.get(['mode', 'apiKeyEncoded', 'serviceUrl'], (result: { [key: string]: any }) => {
+    chrome.storage.local.get(['mode', 'apiKeyEncoded', 'serviceUrl', 'model'], (result: { [key: string]: any }) => {
       resolve({
         mode: result.mode || 'local',
         apiKey: result.apiKeyEncoded ? deobfuscateApiKey(result.apiKeyEncoded) : '',
-        serviceUrl: result.serviceUrl || DEFAULT_SERVICE_URL
+        serviceUrl: result.serviceUrl || DEFAULT_SERVICE_URL,
+        model: result.model || DEFAULT_MODEL
       });
     });
   });
 }
 
-async function generateLocal(commits: string[], diff: string, apiKey: string) {
+async function generateLocal(commits: string[], diff: string, apiKey: string, model: string) {
   if (!apiKey) throw new Error('Gemini API Key is missing for Local mode.');
 
   const genAI = new GoogleGenerativeAI(apiKey);
@@ -186,7 +159,7 @@ async function generateLocal(commits: string[], diff: string, apiKey: string) {
   
   // Request JSON output
   const jsonModel = genAI.getGenerativeModel({ 
-      model: "gemini-2.5-flash",
+      model: model,
       generationConfig: { responseMimeType: "application/json" } as any
   });
 
@@ -194,7 +167,10 @@ async function generateLocal(commits: string[], diff: string, apiKey: string) {
   const response = await result.response;
   let parsed: any;
   try {
-    parsed = JSON.parse(response.text());
+    let jsonText = response.text();
+    // Clean up potential markdown code blocks
+    jsonText = jsonText.replace(/^```json\s*/, '').replace(/\s*```$/, '');
+    parsed = JSON.parse(jsonText);
   } catch {
     throw new Error('The AI returned an invalid response. Please try again.');
   }
@@ -213,13 +189,16 @@ async function generateRemote(commits: string[], diff: string, serviceUrl: strin
   };
   
   const controller = new AbortController();
-  const timeoutId = setTimeout(() => controller.abort(), 60000); // 60s timeout
+  const timeoutId = setTimeout(() => controller.abort(), TIMEOUT_MS);
 
   try {
     const response = await fetch(url, {
       method: 'POST',
       headers,
-      body: JSON.stringify({ commits, diff }),
+      body: JSON.stringify({
+        commits: commits.slice(0, MAX_COMMITS_LENGTH),
+        diff: diff.substring(0, MAX_DIFF_LENGTH),
+      }),
       signal: controller.signal
     });
 
@@ -244,6 +223,7 @@ function constructPrompt(commits: string[], diff: string): string {
   return `
 You are a PR assistant. Analyze the code changes and return a JSON object with "title" and "description" fields.
 The "description" field should contain the full markdown body using the template below.
+Return ONLY valid JSON. Do not include markdown formatting like \`\`\`json.
 
 Template:
 # Task
@@ -263,9 +243,9 @@ Template:
 - [ ] I have added tests to cover my changes
 
 Commits:
-${commits.join('\n')}
+${commits.slice(0, MAX_COMMITS_LENGTH).join('\n')}
 
 Diff:
-${diff.substring(0, 30000)}
+${diff.substring(0, MAX_DIFF_LENGTH)}
   `;
 }

@@ -2,7 +2,7 @@
   <img src="extension/public/icons/icon128.png" alt="PR-Please Logo" width="100" height="100">
   <h1>PR-Please</h1>
   <p>
-    <b>Generate structured GitHub Pull Request titles and descriptions instantly using Google Gemini AI.</b>
+    <b>Generate structured GitHub Pull Request titles and descriptions instantly</b>
   </p>
 </div>
 
@@ -23,28 +23,6 @@
   - Scoped host permissions to GitHub PR/compare pages and Gemini API only.
   - Service URL validated before use. No `innerHTML` — all DOM built via safe APIs.
 - **Native Experience** — Injects seamlessly into GitHub PR pages with a UI matching GitHub's design system.
-
-## Project Structure
-
-```
-pr-please/
-├── extension/          # Chrome extension (Manifest V3)
-│   ├── public/         # Static assets, manifest.json, icons
-│   ├── src/
-│   │   ├── background.ts   # Service worker — fetches diffs, calls LLM
-│   │   ├── content.ts      # Content script — injects UI into GitHub pages
-│   │   ├── popup.ts        # Extension popup — settings management
-│   │   ├── popup.html      # Popup markup
-│   │   └── popup.css       # Popup styles
-│   ├── vite.config.ts
-│   └── package.json
-├── service/            # Optional backend service (Fastify)
-│   ├── src/
-│   │   └── index.ts        # API server — /ping, /generate endpoints
-│   ├── .env.example
-│   └── package.json
-└── README.md
-```
 
 ## Installation
 
@@ -128,20 +106,6 @@ Your API key is stored obfuscated in the browser's local storage and persists ac
 4. A consent dialog confirms the destination before sending your code.
 5. Review the generated title and description in the result bar.
 6. Click **Apply** to insert them into the form.
-
-## Security
-
-A full security audit has been conducted based on [ChromeAudit](https://github.com/nullenc0de/ChromeAudit) criteria. See [`extension/SECURITY_AUDIT.md`](extension/SECURITY_AUDIT.md) for the detailed report.
-
-Key security measures:
-- **CSP enforced** — `script-src 'self'; object-src 'none'`
-- **Minimal permissions** — Only `storage` and `activeTab`; no `scripting`
-- **Scoped host access** — Narrowed to specific GitHub and Gemini API paths
-- **No `innerHTML`** — All DOM construction uses safe `createElement`/`textContent` APIs
-- **API key obfuscated** — XOR + base64 encoded in `chrome.storage.local`
-- **URL validation** — Service URLs validated with scheme allowlist before fetch
-- **User consent gate** — Confirmation dialog before sending any code data externally
-- **No external resource loading** — System fonts only, no CDN requests
 
 ## License
 
