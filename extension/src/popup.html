@@ -65,6 +65,18 @@
         </div>
 
         <div class="form-group">
+          <label class="form-label">Base URL</label>
+          <input class="form-input" id="localBaseUrl" list="baseUrlOptions" placeholder="https://generativelanguage.googleapis.com" />
+          <datalist id="baseUrlOptions">
+            <option value="https://generativelanguage.googleapis.com">Google Default</option>
+            <option value="http://127.0.0.1:8045">Local Default</option>
+          </datalist>
+          <div class="form-hint">
+            Optional. Override for local AI proxies.
+          </div>
+        </div>
+
+        <div class="form-group">
           <label class="form-label">API Key</label>
           <div class="input-wrapper">
             <input class="form-input" id="apiKey" type="password" placeholder="Enter your Gemini API Key" style="padding-right:36px" />

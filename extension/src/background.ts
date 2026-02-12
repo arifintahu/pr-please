@@ -1,5 +1,5 @@
 import { GoogleGenerativeAI } from '@google/generative-ai';
-import { DEFAULT_SERVICE_URL, DEFAULT_MODEL, deobfuscateApiKey } from './utils';
+import { DEFAULT_SERVICE_URL, DEFAULT_MODEL, DEFAULT_LOCAL_BASE_URL, deobfuscateApiKey } from './utils';
 
 const ALLOWED_URL_SCHEMES = ['http:', 'https:'];
 const TIMEOUT_MS = 60000; // 60 seconds
@@ -17,6 +17,7 @@ interface Settings {
   mode: 'local' | 'remote';
   apiKey: string;
   serviceUrl: string;
+  localBaseUrl: string;
   model: string;
 }
 
@@ -62,7 +63,7 @@ async function handleGeneratePR(request: GenerateRequest) {
 
   // 4. Call LLM
   if (settings.mode === 'local') {
-    return await generateLocal(commits, cleanedDiff, settings.apiKey, settings.model);
+    return await generateLocal(commits, cleanedDiff, settings.apiKey, settings.model, settings.localBaseUrl);
   } else {
     return await generateRemote(commits, cleanedDiff, settings.serviceUrl);
   }
@@ -139,45 +140,93 @@ function filterDiff(diff: string): string {
 
 async function getSettings(): Promise<Settings> {
   return new Promise((resolve) => {
-    chrome.storage.local.get(['mode', 'apiKeyEncoded', 'serviceUrl', 'model'], (result: { [key: string]: any }) => {
+    chrome.storage.local.get(['mode', 'apiKeyEncoded', 'serviceUrl', 'localBaseUrl', 'model'], (result: { [key: string]: any }) => {
       resolve({
         mode: result.mode || 'local',
         apiKey: result.apiKeyEncoded ? deobfuscateApiKey(result.apiKeyEncoded) : '',
         serviceUrl: result.serviceUrl || DEFAULT_SERVICE_URL,
+        localBaseUrl: result.localBaseUrl || DEFAULT_LOCAL_BASE_URL,
         model: result.model || DEFAULT_MODEL
       });
     });
   });
 }
 
-async function generateLocal(commits: string[], diff: string, apiKey: string, model: string) {
+async function generateLocal(commits: string[], diff: string, apiKey: string, model: string, baseUrl: string) {
   if (!apiKey) throw new Error('Gemini API Key is missing for Local mode.');
 
-  const genAI = new GoogleGenerativeAI(apiKey);
-  
   const prompt = constructPrompt(commits, diff);
-  
-  // Request JSON output
-  const jsonModel = genAI.getGenerativeModel({ 
-      model: model,
-      generationConfig: { responseMimeType: "application/json" } as any
-  });
 
-  const result = await jsonModel.generateContent(prompt);
-  const response = await result.response;
-  let parsed: any;
-  try {
-    let jsonText = response.text();
-    // Clean up potential markdown code blocks
-    jsonText = jsonText.replace(/^```json\s*/, '').replace(/\s*```$/, '');
-    parsed = JSON.parse(jsonText);
-  } catch {
-    throw new Error('The AI returned an invalid response. Please try again.');
+  if (!baseUrl || baseUrl === DEFAULT_LOCAL_BASE_URL) {
+    const genAI = new GoogleGenerativeAI(apiKey);
+    
+    // Request JSON output
+    const jsonModel = genAI.getGenerativeModel({ 
+        model: model,
+        generationConfig: { responseMimeType: "application/json" } as any
+    });
+
+    const result = await jsonModel.generateContent(prompt);
+    const response = await result.response;
+    let parsed: any;
+    try {
+      let jsonText = response.text();
+      // Clean up potential markdown code blocks
+      jsonText = jsonText.replace(/^```json\s*/, '').replace(/\s*```$/, '');
+      parsed = JSON.parse(jsonText);
+    } catch {
+      throw new Error('The AI returned an invalid response. Please try again.');
+    }
+    if (!parsed.title || !parsed.description) {
+      throw new Error('The AI response is missing required title or description fields.');
+    }
+    return parsed;
+  } else {
+    // Custom Base URL Logic (e.g. for local proxies like Ollama or LocalAI)
+    const normalizedBase = baseUrl.endsWith('/') ? baseUrl.slice(0, -1) : baseUrl;
+    const url = `${normalizedBase}/v1beta/models/${model}:generateContent?key=${apiKey}`;
+    
+    const response = await fetch(url, {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+            contents: [{
+                role: 'user',
+                parts: [{ text: prompt }]
+            }],
+            generationConfig: {
+                responseMimeType: "application/json"
+            }
+        })
+    });
+
+    if (!response.ok) {
+        const errText = await response.text();
+        throw new Error(`Local AI Error (${response.status}): ${errText.substring(0, 100)}`);
+    }
+
+    const data = await response.json();
+    let text = data.candidates?.[0]?.content?.parts?.[0]?.text;
+    
+    if (!text) {
+         throw new Error('Invalid response structure from Local AI.');
+    }
+    
+    text = text.replace(/^```json\s*/, '').replace(/\s*```$/, '');
+    let parsed;
+    try {
+        parsed = JSON.parse(text);
+    } catch {
+        throw new Error('The AI returned an invalid JSON response.');
+    }
+
+    if (!parsed.title || !parsed.description) {
+      throw new Error('The AI response is missing required title or description fields.');
+    }
+    return parsed;
   }
-  if (!parsed.title || !parsed.description) {
-    throw new Error('The AI response is missing required title or description fields.');
-  }
-  return parsed;
 }
 
 async function generateRemote(commits: string[], diff: string, serviceUrl: string) {

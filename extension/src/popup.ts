@@ -1,9 +1,10 @@
-import { DEFAULT_SERVICE_URL, DEFAULT_MODEL, obfuscateApiKey, deobfuscateApiKey } from './utils';
+import { DEFAULT_SERVICE_URL, DEFAULT_MODEL, DEFAULT_LOCAL_BASE_URL, obfuscateApiKey, deobfuscateApiKey } from './utils';
 
 interface Settings {
   mode: 'local' | 'remote';
   apiKey: string;
   serviceUrl: string;
+  localBaseUrl: string;
   model: string;
 }
 
@@ -11,6 +12,7 @@ const defaultSettings: Settings = {
   mode: 'remote',
   apiKey: '',
   serviceUrl: DEFAULT_SERVICE_URL,
+  localBaseUrl: DEFAULT_LOCAL_BASE_URL,
   model: DEFAULT_MODEL,
 };
 
@@ -22,6 +24,7 @@ document.addEventListener('DOMContentLoaded', () => {
   const localFields = document.getElementById('localFields') as HTMLDivElement;
   
   const serviceUrlInput = document.getElementById('serviceUrl') as HTMLInputElement;
+  const localBaseUrlInput = document.getElementById('localBaseUrl') as HTMLInputElement;
   const modelSelect = document.getElementById('modelSelect') as HTMLSelectElement;
   const apiKeyInput = document.getElementById('apiKey') as HTMLInputElement;
   const toggleApiKeyBtn = document.getElementById('toggleApiKey') as HTMLSpanElement;
@@ -63,11 +66,13 @@ document.addEventListener('DOMContentLoaded', () => {
   }
 
   // Load settings — all from local storage, API key is obfuscated
-  chrome.storage.local.get(['mode', 'serviceUrl', 'model', 'apiKeyEncoded'], (result: { [key: string]: any }) => {
+  chrome.storage.local.get(['mode', 'serviceUrl', 'localBaseUrl', 'model', 'apiKeyEncoded'], (result: { [key: string]: any }) => {
     const settings = { ...defaultSettings, ...result };
 
     setMode(settings.mode);
     serviceUrlInput.value = settings.serviceUrl || defaultSettings.serviceUrl;
+    localBaseUrlInput.value = settings.localBaseUrl || defaultSettings.localBaseUrl;
+    updateUrlStatus();
     modelSelect.value = settings.model || defaultSettings.model;
     apiKeyInput.value = result.apiKeyEncoded ? deobfuscateApiKey(result.apiKeyEncoded) : '';
 
@@ -75,6 +80,20 @@ document.addEventListener('DOMContentLoaded', () => {
       checkConnection(serviceUrlInput.value);
     }
   });
+
+  function updateUrlStatus() {
+    const isCustom = localBaseUrlInput.value.trim() !== DEFAULT_LOCAL_BASE_URL;
+    if (isCustom) {
+      localBaseUrlInput.style.borderColor = '#4285f4'; // Google Blue
+      localBaseUrlInput.title = "Custom Base URL Active";
+    } else {
+      localBaseUrlInput.style.borderColor = '';
+      localBaseUrlInput.title = "Default Google Base URL";
+    }
+  }
+
+  localBaseUrlInput.addEventListener('input', updateUrlStatus);
+
 
   // Mode Switching
   function setMode(mode: 'local' | 'remote') {
@@ -122,8 +141,21 @@ document.addEventListener('DOMContentLoaded', () => {
       mode: currentMode,
       apiKey: apiKeyInput.value.trim(),
       serviceUrl: serviceUrlInput.value.trim(),
+      localBaseUrl: localBaseUrlInput.value.trim() || DEFAULT_LOCAL_BASE_URL,
       model: modelSelect.value
     };
+
+    // Validate URLs
+    try {
+      new URL(settings.serviceUrl);
+      new URL(settings.localBaseUrl);
+    } catch (e) {
+      statusRow.style.display = 'flex';
+      statusText.textContent = 'Invalid URL format';
+      statusRow.classList.add('error');
+      setTimeout(() => { statusRow.style.display = 'none'; statusRow.classList.remove('error'); }, 2000);
+      return;
+    }
 
     if (currentMode === 'local') {
       if (!settings.apiKey) {
