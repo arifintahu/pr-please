@@ -370,6 +370,10 @@ async function handleGenerate(e: Event) {
   hideResultBar();
 
   try {
+    if (!chrome?.runtime?.sendMessage) {
+      throw new Error('Extension context invalidated. Please refresh the page.');
+    }
+
     const commitElements = document.querySelectorAll('.js-commits-list-item p.mb-1 a.markdown-title, .commit-message code a');
     const commits = Array.from(commitElements).map(el => el.textContent?.trim()).filter(Boolean) as string[];
     const prUrl = window.location.href.split('?')[0];
@@ -463,6 +467,11 @@ function applyResult() {
 // ── Settings Modal Logic (M3: built with DOM API) ──
 function openSettingsModal() {
   if (document.getElementById('prp-settings-modal')) return;
+
+  if (!chrome?.storage?.local) {
+    alert('Extension context invalidated. Please refresh the page.');
+    return;
+  }
 
   const modalOverlay = el('div', { id: 'prp-settings-modal', class: 'prp-modal-overlay' });
 
@@ -575,6 +584,11 @@ function closeSettingsModal() {
 }
 
 function saveSettings() {
+  if (!chrome?.storage?.local) {
+    alert('Extension context invalidated. Please refresh the page.');
+    return;
+  }
+
   const toggle = document.querySelector('.prp-toggle');
   const mode = toggle?.getAttribute('data-current-mode') || 'remote';
 
