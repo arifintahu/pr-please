@@ -1,6 +1,16 @@
 export const DEFAULT_SERVICE_URL = 'http://localhost:3000';
 export const DEFAULT_LOCAL_BASE_URL = 'https://generativelanguage.googleapis.com';
 export const DEFAULT_MODEL = 'gemini-2.5-flash';
+export const MODEL_OPTIONS = [
+  'gemini-3-flash',
+  'gemini-3-flash-lite',
+  'gemini-3-pro',
+  'gemini-2.5-flash',
+  'gemini-2.5-flash-lite',
+  'gemini-2.5-pro',
+  'gemini-2.0-flash',
+  'gemini-2.0-flash-lite',
+];
 export const OBFUSCATION_KEY = 'PrPlease2024ExtKey';
 
 export function obfuscateApiKey(plaintext: string): string {
