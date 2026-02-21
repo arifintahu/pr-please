@@ -279,25 +279,30 @@ STRICT OUTPUT RULES:
 
 CONTENT GENERATION RULES:
 - **Title**: Use Conventional Commits format (e.g., "feat: ...", "fix: ...").
-- **Task Section**: Look for issue references (e.g., "fixes #123", "JIRA-456") in the commits. 
-  - IF FOUND: Include a "# Task" section with the link. 
-  - IF NOT FOUND: **OMIT the "# Task" section entirely.** Do not output empty placeholders.
-- **Description**: Summarize the changes clearly. Do not retain the HTML comments () from the template.
-- **Checklist**: Mark items as [x] only if evident in the code (e.g., tests are present in the diff).
+- **Summary**: Write a concise paragraph summarizing the overall change and its purpose.
+- **Key Changes**: List the main changes as bullet points with bold component/feature names followed by nested sub-bullets for details. Group related changes together.
+- **Notable Implementation Details**: Highlight important technical decisions, architectural choices, or caveats as bullet points.
+- **Impact**: Write a paragraph describing the value and effect of these changes on users or the system.
 
 Target Markdown Structure for "description":
-# Task
-(Only if applicable)
+## Summary
+(Concise paragraph summarizing the overall change and its purpose)
 
-# Description
-(Summary of changes and important details)
+## Key Changes
 
-# How Has This Been Tested?
-(Description of testing strategy based on code changes)
+- **Component or feature name**: Description of the change
+  - Sub-item detail
+  - Sub-item detail
+- **Another component**: Description of the change
 
-# Checklist
-- [ ] I have performed a self-review of my own code
-- [ ] I have added tests to cover my changes
+## Notable Implementation Details
+
+- Important technical detail or architectural decision
+- Any caveats, remaining gaps, or follow-up work needed
+
+## Impact
+
+(Paragraph describing the value and effect of these changes)
 
 Commits:
 ${commits.slice(0, MAX_COMMITS_LENGTH).join('\n')}

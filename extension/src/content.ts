@@ -388,11 +388,11 @@ async function handleGenerate(e: Event) {
       throw new Error(response.error);
     }
 
-    // Success
+    // Success — auto-apply immediately
     generatedData = response;
-    showResultBar();
+    applyResult();
     btn.classList.add('success');
-    setBtnState('success', 'Generated!');
+    setBtnState('success', 'Applied!');
 
     setTimeout(restoreBtn, 3000);
   } catch (err: any) {
