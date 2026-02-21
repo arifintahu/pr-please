@@ -411,35 +411,6 @@ async function handleGenerate(e: Event) {
   }
 }
 
-function showResultBar() {
-  const bar = document.getElementById('prp-result-bar');
-  if (!bar) return;
-
-  // M3: Build result bar with DOM API
-  bar.textContent = '';
-
-  bar.appendChild(icon('success'));
-  bar.appendChild(el('span', {}, ['Title & description ready']));
-
-  const actions = el('div', { class: 'prp-actions' });
-
-  const applyBtn = el('button', { class: 'prp-action-btn prp-primary', id: 'prp-apply' }, ['Apply']);
-  const previewBtn = el('button', { class: 'prp-action-btn prp-secondary', id: 'prp-preview' }, ['Preview']);
-  const dismissBtn = el('button', { class: 'prp-action-btn prp-danger', id: 'prp-dismiss' }, [icon('close')]);
-
-  actions.appendChild(applyBtn);
-  actions.appendChild(previewBtn);
-  actions.appendChild(dismissBtn);
-  bar.appendChild(actions);
-  bar.style.display = 'flex';
-
-  applyBtn.addEventListener('click', applyResult);
-  previewBtn.addEventListener('click', () => {
-    alert('Preview:\n\n' + (generatedData?.title ?? '') + '\n\n' + (generatedData?.description ?? ''));
-  });
-  dismissBtn.addEventListener('click', hideResultBar);
-}
-
 function hideResultBar() {
   const bar = document.getElementById('prp-result-bar');
   if (bar) bar.style.display = 'none';
