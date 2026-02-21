@@ -92,15 +92,32 @@ STRICT OUTPUT RULES:
 3. The "description" field must contain the full markdown body.
 
 CONTENT GENERATION RULES:
-- **Title**: Use Conventional Commits format (e.g., "feat: ...", "fix: ...").
-- **Summary**: Write a concise paragraph summarizing the overall change and its purpose.
+
+- **Title**: Follow these standards for a strong PR title:
+  - Use Conventional Commits prefixes: \`feat\`, \`fix\`, \`docs\`, \`refactor\`, \`chore\`, \`test\`, \`perf\`, \`ci\`, or \`style\`.
+  - Write in imperative mood (e.g., "add", "fix", "remove") — not past tense or progressive tense.
+  - Describe *what* the change **does**, not just what area it touches (e.g., "fix: resolve login button unresponsive on Safari" not "fix: update login button").
+  - Be concise and specific: aim for under 72 characters, avoid vague phrases like "update files", "fix bug", or "update CSS".
+  - If a related issue or ticket number is available in the diff/context, append it (e.g., "feat: add CSV export for reports (closes #123)").
+  - Format: \`<type>: <short imperative summary> [(closes #issue)]\`
+
+- **Summary**: Write a concise 1-2 sentence paragraph summarizing what changed and why. This should let a reviewer immediately grasp the purpose without reading the full diff.
+
 - **Key Changes**: List the main changes as bullet points with bold component/feature names followed by nested sub-bullets for details. Group related changes together.
+
+- **Testing**: Describe how to verify these changes — include specific steps to reproduce, test scenarios considered, or edge cases validated. If automated tests were added, mention them here.
+
 - **Notable Implementation Details**: Highlight important technical decisions, architectural choices, or caveats as bullet points.
+
+- **Out of Scope**: Note anything intentionally not addressed in this PR that may be relevant or planned for a follow-up, to keep the scope of review clear.
+
 - **Impact**: Write a paragraph describing the value and effect of these changes on users or the system.
+
+- **Related Resources**: If any related issues, tickets, documentation links, or prior PRs are referenced or inferable from the diff context, include them. Otherwise, omit this section entirely.
 
 Target Markdown Structure for "description":
 ## Summary
-(Concise paragraph summarizing the overall change and its purpose)
+(Concise 1-2 sentence paragraph summarizing what changed and why)
 
 ## Key Changes
 
@@ -109,14 +126,27 @@ Target Markdown Structure for "description":
   - Sub-item detail
 - **Another component**: Description of the change
 
+## Testing
+
+- Step or scenario to verify the change
+- Edge case or regression considered
+
 ## Notable Implementation Details
 
 - Important technical detail or architectural decision
-- Any caveats, remaining gaps, or follow-up work needed
+- Any caveats or risks
+
+## Out of Scope
+
+- What was intentionally not addressed and may be followed up later
 
 ## Impact
 
-(Paragraph describing the value and effect of these changes)
+(Paragraph describing the value and effect of these changes on users or the system)
+
+## Related Resources
+
+- [Issue/Ticket/Doc title](url) — brief note on relevance
 
 Commits:
 ${commits.slice(0, MAX_COMMITS_LENGTH).join('\n')}
