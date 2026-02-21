@@ -1,5 +1,5 @@
 // content.ts
-import { DEFAULT_SERVICE_URL, obfuscateApiKey, deobfuscateApiKey } from './utils';
+import { DEFAULT_SERVICE_URL, MODEL_OPTIONS, obfuscateApiKey, deobfuscateApiKey } from './utils';
 
 // ── Icon Helpers ──
 // Create SVG elements via DOM API instead of innerHTML to prevent injection risks.
@@ -388,11 +388,11 @@ async function handleGenerate(e: Event) {
       throw new Error(response.error);
     }
 
-    // Success
+    // Success — auto-apply immediately
     generatedData = response;
-    showResultBar();
+    applyResult();
     btn.classList.add('success');
-    setBtnState('success', 'Generated!');
+    setBtnState('success', 'Applied!');
 
     setTimeout(restoreBtn, 3000);
   } catch (err: any) {
@@ -409,35 +409,6 @@ async function handleGenerate(e: Event) {
 
     setTimeout(restoreBtn, 3000);
   }
-}
-
-function showResultBar() {
-  const bar = document.getElementById('prp-result-bar');
-  if (!bar) return;
-
-  // M3: Build result bar with DOM API
-  bar.textContent = '';
-
-  bar.appendChild(icon('success'));
-  bar.appendChild(el('span', {}, ['Title & description ready']));
-
-  const actions = el('div', { class: 'prp-actions' });
-
-  const applyBtn = el('button', { class: 'prp-action-btn prp-primary', id: 'prp-apply' }, ['Apply']);
-  const previewBtn = el('button', { class: 'prp-action-btn prp-secondary', id: 'prp-preview' }, ['Preview']);
-  const dismissBtn = el('button', { class: 'prp-action-btn prp-danger', id: 'prp-dismiss' }, [icon('close')]);
-
-  actions.appendChild(applyBtn);
-  actions.appendChild(previewBtn);
-  actions.appendChild(dismissBtn);
-  bar.appendChild(actions);
-  bar.style.display = 'flex';
-
-  applyBtn.addEventListener('click', applyResult);
-  previewBtn.addEventListener('click', () => {
-    alert('Preview:\n\n' + (generatedData?.title ?? '') + '\n\n' + (generatedData?.description ?? ''));
-  });
-  dismissBtn.addEventListener('click', hideResultBar);
 }
 
 function hideResultBar() {
@@ -512,7 +483,7 @@ function openSettingsModal() {
   const modelGroup = el('div', { class: 'prp-form-group' });
   modelGroup.appendChild(el('label', { class: 'prp-label' }, ['Model']));
   const modelSelect = el('select', { class: 'prp-select', id: 'prp-model-select' });
-  for (const m of ['gemini-2.5-flash', 'gemini-1.5-pro']) {
+  for (const m of MODEL_OPTIONS) {
     const opt = el('option', { value: m }, [m]);
     modelSelect.appendChild(opt);
   }

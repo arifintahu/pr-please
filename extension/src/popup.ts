@@ -1,4 +1,4 @@
-import { DEFAULT_SERVICE_URL, DEFAULT_MODEL, DEFAULT_LOCAL_BASE_URL, obfuscateApiKey, deobfuscateApiKey } from './utils';
+import { DEFAULT_SERVICE_URL, DEFAULT_MODEL, DEFAULT_LOCAL_BASE_URL, MODEL_OPTIONS, obfuscateApiKey, deobfuscateApiKey } from './utils';
 
 interface Settings {
   mode: 'local' | 'remote';
@@ -26,6 +26,13 @@ document.addEventListener('DOMContentLoaded', () => {
   const serviceUrlInput = document.getElementById('serviceUrl') as HTMLInputElement;
   const localBaseUrlInput = document.getElementById('localBaseUrl') as HTMLInputElement;
   const modelSelect = document.getElementById('modelSelect') as HTMLSelectElement;
+
+  MODEL_OPTIONS.forEach(model => {
+    const option = document.createElement('option');
+    option.value = model;
+    option.textContent = model;
+    modelSelect.appendChild(option);
+  });
   const apiKeyInput = document.getElementById('apiKey') as HTMLInputElement;
   const toggleApiKeyBtn = document.getElementById('toggleApiKey') as HTMLSpanElement;
   
