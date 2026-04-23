@@ -1,5 +1,5 @@
-import { GoogleGenerativeAI } from '@google/generative-ai';
-import { DEFAULT_MODEL, DEFAULT_BASE_URL, deobfuscateApiKey } from './utils';
+import { deobfuscateApiKey, loadSettings, type StoredSettings } from './utils';
+import { getProvider, type ProviderSettings } from './providers';
 
 const MAX_LINES_PER_FILE = 100;
 const MAX_COMMITS_LENGTH = 50;
@@ -7,6 +7,9 @@ const MAX_DIFF_LENGTH = 30000;
 const MAX_TEMPLATE_LENGTH = 4000;
 const MAX_EXTRA_CONTEXT_LENGTH = 1000;
 const MAX_USER_DRAFT_LENGTH = 2000;
+const MAX_ISSUES_FETCHED = 3;
+const MAX_ISSUE_BODY_LENGTH = 500;
+const ISSUE_CACHE_TTL_MS = 60 * 60 * 1000; // 1h
 
 interface UserDraft {
   title: string;
@@ -20,12 +23,6 @@ interface GenerateRequest {
   extraContext?: string;
   userDraft?: UserDraft;
   useCachedDiff?: boolean;
-}
-
-interface Settings {
-  apiKey: string;
-  baseUrl: string;
-  model: string;
 }
 
 const diffCache = new Map<string, string>();
@@ -56,9 +53,12 @@ async function handleGeneratePR(request: GenerateRequest) {
     diffCache.set(prUrl, cleanedDiff);
   }
 
-  const template = await fetchRepoTemplate(prUrl);
-  const settings = await getSettings();
-  return await generate(commits, cleanedDiff, settings, { extraContext, userDraft, template });
+  const [template, issues] = await Promise.all([
+    fetchRepoTemplate(prUrl),
+    fetchLinkedIssues(prUrl, commits, cleanedDiff),
+  ]);
+  const settings = await loadSettings();
+  return await generate(commits, cleanedDiff, settings, { extraContext, userDraft, template, issues });
 }
 
 const cleaningPatterns = {
@@ -156,6 +156,65 @@ async function fetchRepoTemplate(prUrl: string): Promise<string | null> {
   return null;
 }
 
+interface LinkedIssue {
+  number: number;
+  title: string;
+  body: string;
+}
+
+interface IssueCacheEntry {
+  data: LinkedIssue | null;
+  ts: number;
+}
+
+async function fetchLinkedIssues(prUrl: string, commits: string[], diff: string): Promise<LinkedIssue[]> {
+  const parsed = parseOwnerRepo(prUrl);
+  if (!parsed) return [];
+  const { owner, repo } = parsed;
+
+  const haystack = commits.join('\n') + '\n' + diff;
+  const matches = haystack.match(/(?<![\w&])#(\d+)\b/g) || [];
+  const unique: number[] = [];
+  for (const m of matches) {
+    const n = Number(m.slice(1));
+    if (!Number.isFinite(n) || n <= 0) continue;
+    if (!unique.includes(n)) unique.push(n);
+    if (unique.length >= MAX_ISSUES_FETCHED) break;
+  }
+  if (unique.length === 0) return [];
+
+  const results = await Promise.all(unique.map((n) => loadIssue(owner, repo, n)));
+  return results.filter((r): r is LinkedIssue => r !== null);
+}
+
+async function loadIssue(owner: string, repo: string, number: number): Promise<LinkedIssue | null> {
+  const key = `issue:${owner}/${repo}#${number}`;
+  const cached = await sessionGet<IssueCacheEntry>(key);
+  if (cached && Date.now() - cached.ts < ISSUE_CACHE_TTL_MS) {
+    return cached.data;
+  }
+
+  try {
+    const res = await fetch(`https://api.github.com/repos/${owner}/${repo}/issues/${number}`, {
+      headers: { Accept: 'application/vnd.github+json' },
+    });
+    if (!res.ok) {
+      await sessionSet(key, { data: null, ts: Date.now() });
+      return null;
+    }
+    const json = await res.json();
+    const issue: LinkedIssue = {
+      number,
+      title: String(json.title || '').slice(0, 200),
+      body: String(json.body || '').slice(0, MAX_ISSUE_BODY_LENGTH),
+    };
+    await sessionSet(key, { data: issue, ts: Date.now() });
+    return issue;
+  } catch {
+    return null;
+  }
+}
+
 function sessionGet<T>(key: string): Promise<T | undefined> {
   return new Promise((resolve) => {
     if (!chrome.storage?.session) {
@@ -176,76 +235,24 @@ function sessionSet(key: string, value: unknown): Promise<void> {
   });
 }
 
-async function getSettings(): Promise<Settings> {
-  return new Promise((resolve) => {
-    chrome.storage.local.get(['apiKeyEncoded', 'baseUrl', 'model'], (result) => {
-      resolve({
-        apiKey: result.apiKeyEncoded ? deobfuscateApiKey(result.apiKeyEncoded) : '',
-        baseUrl: result.baseUrl || DEFAULT_BASE_URL,
-        model: result.model || DEFAULT_MODEL
-      });
-    });
-  });
-}
-
 interface PromptExtras {
   extraContext?: string;
   userDraft?: UserDraft;
   template?: string | null;
+  issues?: LinkedIssue[];
 }
 
-async function generate(commits: string[], diff: string, settings: Settings, extras: PromptExtras) {
-  if (!settings.apiKey) throw new Error('Gemini API Key is missing. Open the extension popup to add one.');
+async function generate(commits: string[], diff: string, settings: StoredSettings, extras: PromptExtras) {
+  const provider = getProvider(settings.provider);
+  const config = settings.providers[settings.provider];
+  const providerSettings: ProviderSettings = {
+    apiKey: config.apiKeyEncoded ? deobfuscateApiKey(config.apiKeyEncoded) : '',
+    baseUrl: config.baseUrl || provider.defaultBaseUrl,
+    model: config.model || provider.defaultModel,
+  };
 
   const prompt = constructPrompt(commits, diff, extras);
-
-  if (!settings.baseUrl || settings.baseUrl === DEFAULT_BASE_URL) {
-    const genAI = new GoogleGenerativeAI(settings.apiKey);
-    const jsonModel = genAI.getGenerativeModel({
-      model: settings.model,
-      generationConfig: { responseMimeType: 'application/json' } as any
-    });
-
-    const result = await jsonModel.generateContent(prompt);
-    const response = await result.response;
-    return parseJson(response.text());
-  }
-
-  const normalizedBase = settings.baseUrl.endsWith('/') ? settings.baseUrl.slice(0, -1) : settings.baseUrl;
-  const url = `${normalizedBase}/v1beta/models/${settings.model}:generateContent?key=${settings.apiKey}`;
-
-  const response = await fetch(url, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({
-      contents: [{ role: 'user', parts: [{ text: prompt }] }],
-      generationConfig: { responseMimeType: 'application/json' }
-    })
-  });
-
-  if (!response.ok) {
-    const errText = await response.text();
-    throw new Error(`AI Error (${response.status}): ${errText.substring(0, 100)}`);
-  }
-
-  const data = await response.json();
-  const text = data.candidates?.[0]?.content?.parts?.[0]?.text;
-  if (!text) throw new Error('Invalid response structure from AI.');
-  return parseJson(text);
-}
-
-function parseJson(raw: string) {
-  const jsonText = raw.replace(/^```json\s*/, '').replace(/\s*```$/, '');
-  let parsed;
-  try {
-    parsed = JSON.parse(jsonText);
-  } catch {
-    throw new Error('The AI returned an invalid response. Please try again.');
-  }
-  if (!parsed.title || !parsed.description) {
-    throw new Error('The AI response is missing required title or description fields.');
-  }
-  return parsed;
+  return provider.generate(prompt, providerSettings);
 }
 
 function constructPrompt(commits: string[], diff: string, extras: PromptExtras): string {
@@ -272,6 +279,12 @@ function constructPrompt(commits: string[], diff: string, extras: PromptExtras):
   const extra = extras.extraContext?.trim();
   if (extra) {
     sections.push(`User guidance:\n${extra.slice(0, MAX_EXTRA_CONTEXT_LENGTH)}`);
+  }
+
+  const issues = extras.issues || [];
+  if (issues.length > 0) {
+    const rendered = issues.map((i) => `#${i.number} — ${i.title}\n${i.body}`).join('\n\n');
+    sections.push(`Referenced issues:\n${rendered}`);
   }
 
   const targetStructure = extras.template

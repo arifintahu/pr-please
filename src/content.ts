@@ -1,14 +1,14 @@
 // content.ts
 import {
-  DEFAULT_BASE_URL,
-  LOCALHOST_BASE_URL,
-  DEFAULT_MODEL,
-  MODEL_OPTIONS,
-  resolveProvider,
+  loadSettings,
+  saveSettings,
   obfuscateApiKey,
   deobfuscateApiKey,
-  type ApiProvider,
+  type StoredSettings,
 } from './utils';
+import { PROVIDERS, isProviderId, type ProviderId } from './providers';
+
+type EndpointChoice = 'default' | 'custom';
 
 // ── Icon Helpers ──
 function createSvgIcon(pathData: string, transform?: string): SVGSVGElement {
@@ -326,6 +326,34 @@ const INJECTED_STYLES = `
   .prp-status svg { width: 14px; height: 14px; fill: currentColor; flex-shrink: 0; }
   .prp-status.info svg { animation: prp-spin 1s linear infinite; }
   .prp-hidden { display: none !important; }
+
+  .prp-variations {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    margin-right: auto;
+    font-size: 12px;
+    color: #8b949e;
+  }
+  .prp-nav-btn {
+    width: 26px;
+    height: 26px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    padding: 0;
+    background: #21262d;
+    color: #c9d1d9;
+    border: 1px solid #30363d;
+    border-radius: 6px;
+    cursor: pointer;
+    font-family: inherit;
+    font-size: 14px;
+    line-height: 1;
+  }
+  .prp-nav-btn:hover:not(:disabled) { background: #30363d; }
+  .prp-nav-btn:disabled { opacity: 0.4; cursor: not-allowed; }
+  .prp-variation-label { min-width: 32px; text-align: center; font-variant-numeric: tabular-nums; }
 `;
 
 const styleEl = document.createElement('style');
@@ -333,6 +361,11 @@ styleEl.textContent = INJECTED_STYLES;
 document.head.appendChild(styleEl);
 
 let generatedData: { title: string; description: string } | null = null;
+
+const MAX_VARIATIONS = 3;
+interface Variation { title: string; description: string }
+const variations: Variation[] = [];
+let variationIndex = -1;
 
 interface PreviewHandles {
   titleInput: HTMLInputElement;
@@ -442,6 +475,8 @@ function injectButton() {
 async function handleGenerate() {
   if (document.getElementById('prp-preview-modal')) return;
   generatedData = null;
+  variations.length = 0;
+  variationIndex = -1;
   const prUrl = currentPrUrl();
   const savedExtra = await loadExtraContext(prUrl);
   const preview = openPreviewModal(savedExtra);
@@ -571,6 +606,16 @@ function openPreviewModal(initialExtra: string): PreviewHandles {
   body.appendChild(extraGroup);
 
   const footer = el('div', { class: 'prp-preview-footer' });
+  const variationsGroup = el('div', { class: 'prp-variations' });
+  const prevBtn = el('button', { type: 'button', class: 'prp-nav-btn', title: 'Previous variation', 'aria-label': 'Previous variation' }, ['\u2190']) as HTMLButtonElement;
+  const variationLabel = el('span', { class: 'prp-variation-label' }, ['—']);
+  const nextBtn = el('button', { type: 'button', class: 'prp-nav-btn', title: 'Next variation', 'aria-label': 'Next variation' }, ['\u2192']) as HTMLButtonElement;
+  variationsGroup.appendChild(prevBtn);
+  variationsGroup.appendChild(variationLabel);
+  variationsGroup.appendChild(nextBtn);
+  variationsGroup.hidden = true;
+  footer.appendChild(variationsGroup);
+
   const discardBtn = el('button', { type: 'button', class: 'prp-action-btn danger' }, ['Discard']) as HTMLButtonElement;
   const editBtn = el('button', { type: 'button', class: 'prp-action-btn' }, ['Edit']) as HTMLButtonElement;
   const regenBtn = el('button', { type: 'button', class: 'prp-action-btn' }, ['Regenerate']) as HTMLButtonElement;
@@ -636,9 +681,39 @@ function openPreviewModal(initialExtra: string): PreviewHandles {
     status.appendChild(document.createTextNode(' ' + msg));
   }
 
+  function renderCurrentVariation() {
+    if (variationIndex < 0 || variationIndex >= variations.length) return;
+    const v = variations[variationIndex];
+    titleInput.value = v.title;
+    bodyTextarea.value = v.description;
+    updateVariationUI();
+  }
+
+  function updateVariationUI() {
+    if (variations.length <= 1) {
+      variationsGroup.hidden = true;
+      return;
+    }
+    variationsGroup.hidden = false;
+    variationLabel.textContent = `${variationIndex + 1} / ${variations.length}`;
+    prevBtn.disabled = variationIndex <= 0;
+    nextBtn.disabled = variationIndex >= variations.length - 1;
+  }
+
+  function captureCurrentEdits() {
+    if (variationIndex < 0 || variationIndex >= variations.length) return;
+    variations[variationIndex] = {
+      title: titleInput.value,
+      description: bodyTextarea.value,
+    };
+  }
+
   function setResult(data: { title: string; description: string }) {
-    titleInput.value = data.title;
-    bodyTextarea.value = data.description;
+    if (variations.length >= MAX_VARIATIONS) variations.shift();
+    variations.push({ title: data.title, description: data.description });
+    variationIndex = variations.length - 1;
+    generatedData = data;
+    renderCurrentVariation();
     applyBtn.disabled = false;
     editBtn.disabled = editable;
   }
@@ -670,7 +745,20 @@ function openPreviewModal(initialExtra: string): PreviewHandles {
   discardBtn.addEventListener('click', close);
   editBtn.addEventListener('click', () => setEditable(true));
   regenBtn.addEventListener('click', () => {
+    captureCurrentEdits();
     runGeneration(handles, { useCachedDiff: true });
+  });
+  prevBtn.addEventListener('click', () => {
+    if (variationIndex <= 0) return;
+    captureCurrentEdits();
+    variationIndex -= 1;
+    renderCurrentVariation();
+  });
+  nextBtn.addEventListener('click', () => {
+    if (variationIndex >= variations.length - 1) return;
+    captureCurrentEdits();
+    variationIndex += 1;
+    renderCurrentVariation();
   });
   applyBtn.addEventListener('click', () => {
     const data = {
@@ -691,13 +779,16 @@ function openPreviewModal(initialExtra: string): PreviewHandles {
   return handles;
 }
 
-function openSettingsModal() {
+async function openSettingsModal() {
   if (document.getElementById('prp-settings-modal')) return;
 
   if (!chrome?.storage?.local) {
     alert('Extension context invalidated. Please refresh the page.');
     return;
   }
+
+  const settings = await loadSettings();
+  let currentProviderId: ProviderId = settings.provider;
 
   const modalOverlay = el('div', { id: 'prp-settings-modal', class: 'prp-modal-overlay' });
   const modal = el('div', { class: 'prp-modal' });
@@ -711,25 +802,31 @@ function openSettingsModal() {
   const body = el('div', { class: 'prp-modal-body' });
 
   const intro = el('div', { class: 'prp-intro' });
-  intro.appendChild(el('div', { class: 'prp-intro-title' }, ['Gemini API']));
-  intro.appendChild(el('div', { class: 'prp-intro-desc' }, ['Generate PR content directly from your browser using Google\'s Gemini API.']));
+  const introTitle = el('div', { class: 'prp-intro-title' }, ['AI Provider']);
+  intro.appendChild(introTitle);
+  intro.appendChild(el('div', { class: 'prp-intro-desc' }, ['Generate PR content directly from your browser.']));
   body.appendChild(intro);
 
-  // API Endpoint (provider)
+  // Provider selector
   const providerGroup = el('div', { class: 'prp-form-group' });
-  providerGroup.appendChild(el('label', { class: 'prp-label', for: 'prp-api-provider' }, ['API Endpoint']));
-  const providerSelect = el('select', { class: 'prp-select', id: 'prp-api-provider' });
-  const providerOptions: Array<[ApiProvider, string]> = [
-    ['default', 'Official Google API'],
-    ['localhost', 'Localhost (127.0.0.1:8045)'],
-    ['custom', 'Custom URL'],
-  ];
-  for (const [value, text] of providerOptions) {
-    providerSelect.appendChild(el('option', { value }, [text]));
+  providerGroup.appendChild(el('label', { class: 'prp-label', for: 'prp-provider' }, ['Provider']));
+  const providerSelect = el('select', { class: 'prp-select', id: 'prp-provider' });
+  for (const id of Object.keys(PROVIDERS) as ProviderId[]) {
+    providerSelect.appendChild(el('option', { value: id }, [PROVIDERS[id].label]));
   }
   providerGroup.appendChild(providerSelect);
-  providerGroup.appendChild(el('div', { class: 'prp-hint' }, ['Where requests are sent. Choose Custom for a Gemini-compatible proxy.']));
+  providerGroup.appendChild(el('div', { class: 'prp-hint' }, ['Each provider keeps its own API key and model.']));
   body.appendChild(providerGroup);
+
+  // API Endpoint
+  const endpointGroup = el('div', { class: 'prp-form-group' });
+  endpointGroup.appendChild(el('label', { class: 'prp-label', for: 'prp-api-provider' }, ['API Endpoint']));
+  const endpointSelect = el('select', { class: 'prp-select', id: 'prp-api-provider' });
+  endpointSelect.appendChild(el('option', { value: 'default' }, ['Official']));
+  endpointSelect.appendChild(el('option', { value: 'custom' }, ['Custom URL']));
+  endpointGroup.appendChild(endpointSelect);
+  endpointGroup.appendChild(el('div', { class: 'prp-hint' }, ['Where requests are sent. Choose Custom for a proxy.']));
+  body.appendChild(endpointGroup);
 
   // Custom URL (conditional)
   const customUrlGroup = el('div', { class: 'prp-form-group', id: 'prp-custom-url-group' });
@@ -744,34 +841,63 @@ function openSettingsModal() {
   const modelGroup = el('div', { class: 'prp-form-group' });
   modelGroup.appendChild(el('label', { class: 'prp-label', for: 'prp-model-select' }, ['Model']));
   const modelSelect = el('select', { class: 'prp-select', id: 'prp-model-select' });
-  for (const m of MODEL_OPTIONS) {
-    const opt = el('option', { value: m }, [m]);
-    modelSelect.appendChild(opt);
-  }
   modelGroup.appendChild(modelSelect);
   body.appendChild(modelGroup);
 
   // API Key
-  const apiKeyGroup = el('div', { class: 'prp-form-group' });
+  const apiKeyGroup = el('div', { class: 'prp-form-group', id: 'prp-api-key-group' });
   apiKeyGroup.appendChild(el('label', { class: 'prp-label', for: 'prp-api-key' }, ['API Key']));
-  const apiKeyInput = el('input', { class: 'prp-input', type: 'password', id: 'prp-api-key', placeholder: 'Enter your Gemini API Key', autocomplete: 'off', spellcheck: 'false' });
+  const apiKeyInput = el('input', { class: 'prp-input', type: 'password', id: 'prp-api-key', placeholder: 'Enter your API key', autocomplete: 'off', spellcheck: 'false' });
   apiKeyGroup.appendChild(apiKeyInput);
   apiKeyGroup.appendChild(el('div', { class: 'prp-hint' }, ['Stored locally in your browser, never synced']));
   body.appendChild(apiKeyGroup);
 
-  function applyProvider(provider: ApiProvider, storedBaseUrl?: string) {
-    providerSelect.value = provider;
-    customUrlGroup.hidden = provider !== 'custom';
-    if (provider === 'custom') {
-      if (storedBaseUrl && resolveProvider(storedBaseUrl) === 'custom') {
-        baseUrlInput.value = storedBaseUrl;
-      }
+  function applyEndpointChoice(providerId: ProviderId, choice: EndpointChoice, storedBaseUrl?: string) {
+    const provider = PROVIDERS[providerId];
+    endpointSelect.value = choice;
+    customUrlGroup.hidden = choice !== 'custom';
+    if (choice === 'custom' && storedBaseUrl && storedBaseUrl !== provider.defaultBaseUrl) {
+      baseUrlInput.value = storedBaseUrl;
     }
   }
 
+  function resolveEndpointChoice(baseUrl: string, defaultBaseUrl: string): EndpointChoice {
+    const trimmed = (baseUrl || '').trim().replace(/\/$/, '');
+    if (!trimmed || trimmed === defaultBaseUrl) return 'default';
+    return 'custom';
+  }
+
+  function renderForProvider(providerId: ProviderId) {
+    const provider = PROVIDERS[providerId];
+    const config = settings.providers[providerId];
+    currentProviderId = providerId;
+    providerSelect.value = providerId;
+    introTitle.textContent = provider.label;
+
+    // Populate model options
+    modelSelect.textContent = '';
+    for (const m of provider.modelOptions) {
+      modelSelect.appendChild(el('option', { value: m }, [m]));
+    }
+    modelSelect.value = provider.modelOptions.includes(config.model) ? config.model : provider.defaultModel;
+
+    baseUrlInput.value = '';
+    const baseUrl = config.baseUrl || provider.defaultBaseUrl;
+    applyEndpointChoice(providerId, resolveEndpointChoice(baseUrl, provider.defaultBaseUrl), baseUrl);
+
+    apiKeyGroup.hidden = !provider.requiresApiKey;
+    apiKeyInput.placeholder = provider.requiresApiKey ? `Enter your ${provider.label} API key` : '';
+    apiKeyInput.value = config.apiKeyEncoded ? deobfuscateApiKey(config.apiKeyEncoded) : '';
+  }
+
   providerSelect.addEventListener('change', () => {
-    applyProvider(providerSelect.value as ApiProvider);
-    if (providerSelect.value === 'custom') baseUrlInput.focus();
+    if (!isProviderId(providerSelect.value)) return;
+    renderForProvider(providerSelect.value);
+  });
+
+  endpointSelect.addEventListener('change', () => {
+    applyEndpointChoice(currentProviderId, endpointSelect.value as EndpointChoice);
+    if (endpointSelect.value === 'custom') baseUrlInput.focus();
   });
 
   const saveBtn = el('button', { class: 'prp-save-btn', id: 'prp-save-btn' }, ['Save Settings']);
@@ -782,64 +908,65 @@ function openSettingsModal() {
   modalOverlay.appendChild(modal);
   document.body.appendChild(modalOverlay);
 
-  chrome.storage.local.get(['baseUrl', 'model', 'apiKeyEncoded'], (res) => {
-    apiKeyInput.value = res.apiKeyEncoded ? deobfuscateApiKey(res.apiKeyEncoded) : '';
-    modelSelect.value = res.model || DEFAULT_MODEL;
-    const storedBase = res.baseUrl || DEFAULT_BASE_URL;
-    applyProvider(resolveProvider(storedBase), storedBase);
-  });
+  renderForProvider(currentProviderId);
 
   closeBtn.addEventListener('click', closeSettingsModal);
   modalOverlay.addEventListener('click', (e) => {
     if (e.target === modalOverlay) closeSettingsModal();
   });
-  saveBtn.addEventListener('click', saveSettings);
+
+  saveBtn.addEventListener('click', async () => {
+    const provider = PROVIDERS[currentProviderId];
+    const apiKey = apiKeyInput.value.trim();
+    const model = modelSelect.value;
+    const choice = endpointSelect.value as EndpointChoice;
+
+    let baseUrl: string;
+    if (choice === 'default') {
+      baseUrl = provider.defaultBaseUrl;
+    } else {
+      const raw = baseUrlInput.value.trim();
+      try {
+        const u = new URL(raw);
+        if (u.protocol !== 'http:' && u.protocol !== 'https:') throw new Error('bad protocol');
+        baseUrl = raw.replace(/\/$/, '');
+      } catch {
+        alert('Invalid Custom URL. It must start with http:// or https://');
+        return;
+      }
+    }
+
+    if (provider.requiresApiKey && !apiKey) {
+      alert(`Please enter a ${provider.label} API key.`);
+      return;
+    }
+
+    const updated: StoredSettings = {
+      provider: currentProviderId,
+      providers: {
+        ...settings.providers,
+        [currentProviderId]: {
+          apiKeyEncoded: apiKey ? obfuscateApiKey(apiKey) : '',
+          baseUrl,
+          model,
+        },
+      },
+    };
+
+    try {
+      await saveSettings(updated);
+      settings.provider = updated.provider;
+      settings.providers = updated.providers;
+      saveBtn.textContent = 'Saved!';
+      setTimeout(closeSettingsModal, 1000);
+    } catch {
+      alert('Error saving settings.');
+    }
+  });
 }
 
 function closeSettingsModal() {
   document.getElementById('prp-settings-modal')?.remove();
-}
-
-function saveSettings() {
-  if (!chrome?.storage?.local) {
-    alert('Extension context invalidated. Please refresh the page.');
-    return;
-  }
-
-  const apiKey = (document.getElementById('prp-api-key') as HTMLInputElement).value.trim();
-  const model = (document.getElementById('prp-model-select') as HTMLSelectElement).value;
-  const provider = (document.getElementById('prp-api-provider') as HTMLSelectElement).value as ApiProvider;
-  const customUrlRaw = (document.getElementById('prp-base-url') as HTMLInputElement).value.trim();
-
-  let baseUrl: string;
-  if (provider === 'default') {
-    baseUrl = DEFAULT_BASE_URL;
-  } else if (provider === 'localhost') {
-    baseUrl = LOCALHOST_BASE_URL;
-  } else {
-    try {
-      const u = new URL(customUrlRaw);
-      if (u.protocol !== 'http:' && u.protocol !== 'https:') throw new Error('bad protocol');
-      baseUrl = customUrlRaw.replace(/\/$/, '');
-    } catch {
-      alert('Invalid Custom URL. It must start with http:// or https://');
-      return;
-    }
-  }
-
-  if (!apiKey) {
-    alert('Please enter a Gemini API key.');
-    return;
-  }
-
-  const apiKeyEncoded = obfuscateApiKey(apiKey);
-  chrome.storage.local.set({ baseUrl, model, apiKeyEncoded }, () => {
-    const btn = document.getElementById('prp-save-btn');
-    if (btn) {
-      btn.textContent = 'Saved!';
-      setTimeout(closeSettingsModal, 1000);
-    }
-  });
 }
 
 let observerTimer: ReturnType<typeof setTimeout> | null = null;

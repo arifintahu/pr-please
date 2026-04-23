@@ -1,26 +1,14 @@
 import {
-  DEFAULT_BASE_URL,
-  LOCALHOST_BASE_URL,
-  DEFAULT_MODEL,
-  MODEL_OPTIONS,
   GITHUB_REPO,
-  resolveProvider,
+  DEFAULT_PROVIDER,
+  loadSettings,
+  saveSettings,
   obfuscateApiKey,
   deobfuscateApiKey,
-  type ApiProvider,
+  type ProviderConfig,
+  type StoredSettings,
 } from './utils';
-
-interface Settings {
-  apiKey: string;
-  baseUrl: string;
-  model: string;
-}
-
-const defaultSettings: Settings = {
-  apiKey: '',
-  baseUrl: DEFAULT_BASE_URL,
-  model: DEFAULT_MODEL,
-};
+import { PROVIDERS, isProviderId, type ProviderId } from './providers';
 
 const STAR_CACHE_TTL_MS = 6 * 60 * 60 * 1000; // 6h
 
@@ -55,11 +43,21 @@ async function loadStarCount(badge: HTMLElement) {
   }
 }
 
-document.addEventListener('DOMContentLoaded', () => {
+type EndpointChoice = 'default' | 'custom';
+
+function resolveEndpointChoice(baseUrl: string, defaultBaseUrl: string): EndpointChoice {
+  const trimmed = (baseUrl || '').trim().replace(/\/$/, '');
+  if (!trimmed || trimmed === defaultBaseUrl) return 'default';
+  return 'custom';
+}
+
+document.addEventListener('DOMContentLoaded', async () => {
+  const providerSelect = document.getElementById('providerSelect') as HTMLSelectElement;
   const apiProviderSelect = document.getElementById('apiProvider') as HTMLSelectElement;
   const customUrlGroup = document.getElementById('customUrlGroup') as HTMLDivElement;
   const customBaseUrlInput = document.getElementById('customBaseUrl') as HTMLInputElement;
   const modelSelect = document.getElementById('modelSelect') as HTMLSelectElement;
+  const apiKeyGroup = document.getElementById('apiKeyGroup') as HTMLDivElement;
   const apiKeyInput = document.getElementById('apiKey') as HTMLInputElement;
   const toggleApiKeyBtn = document.getElementById('toggleApiKey') as HTMLButtonElement;
   const saveBtn = document.getElementById('saveBtn') as HTMLButtonElement;
@@ -67,14 +65,66 @@ document.addEventListener('DOMContentLoaded', () => {
   const statusRow = document.getElementById('statusRow') as HTMLDivElement;
   const statusText = document.getElementById('statusText') as HTMLSpanElement;
   const starCount = document.getElementById('starCount') as HTMLSpanElement;
+  const providerIntroTitle = document.getElementById('providerIntroTitle') as HTMLDivElement;
 
   loadStarCount(starCount);
 
-  for (const model of MODEL_OPTIONS) {
-    const option = document.createElement('option');
-    option.value = model;
-    option.textContent = model;
-    modelSelect.appendChild(option);
+  const settings: StoredSettings = await loadSettings();
+  let currentProviderId: ProviderId = settings.provider || DEFAULT_PROVIDER;
+
+  function populateModelOptions(providerId: ProviderId, selectedModel: string) {
+    const options = PROVIDERS[providerId].modelOptions;
+    modelSelect.textContent = '';
+    for (const model of options) {
+      const option = document.createElement('option');
+      option.value = model;
+      option.textContent = model;
+      modelSelect.appendChild(option);
+    }
+    modelSelect.value = options.includes(selectedModel) ? selectedModel : PROVIDERS[providerId].defaultModel;
+  }
+
+  function applyEndpointChoice(providerId: ProviderId, choice: EndpointChoice, storedBaseUrl?: string) {
+    const provider = PROVIDERS[providerId];
+    apiProviderSelect.value = choice;
+    customUrlGroup.hidden = choice !== 'custom';
+    if (choice === 'custom') {
+      if (storedBaseUrl && storedBaseUrl !== provider.defaultBaseUrl) {
+        customBaseUrlInput.value = storedBaseUrl;
+      }
+    }
+  }
+
+  function renderForProvider(providerId: ProviderId, config: ProviderConfig) {
+    const provider = PROVIDERS[providerId];
+    currentProviderId = providerId;
+    providerSelect.value = providerId;
+    providerIntroTitle.textContent = provider.label;
+
+    populateModelOptions(providerId, config.model);
+
+    const baseUrl = config.baseUrl || provider.defaultBaseUrl;
+    customBaseUrlInput.value = '';
+    applyEndpointChoice(providerId, resolveEndpointChoice(baseUrl, provider.defaultBaseUrl), baseUrl);
+
+    apiKeyGroup.hidden = !provider.requiresApiKey;
+    apiKeyInput.placeholder = provider.requiresApiKey ? `Enter your ${provider.label} API key` : '';
+    apiKeyInput.value = config.apiKeyEncoded ? deobfuscateApiKey(config.apiKeyEncoded) : '';
+  }
+
+  function resolveBaseUrl(providerId: ProviderId): string | null {
+    const provider = PROVIDERS[providerId];
+    const choice = apiProviderSelect.value as EndpointChoice;
+    if (choice === 'default') return provider.defaultBaseUrl;
+    const value = customBaseUrlInput.value.trim();
+    if (!value) return null;
+    try {
+      const u = new URL(value);
+      if (u.protocol !== 'http:' && u.protocol !== 'https:') return null;
+      return value.replace(/\/$/, '');
+    } catch {
+      return null;
+    }
   }
 
   function showStatus(message: string, isError = false) {
@@ -89,44 +139,18 @@ document.addEventListener('DOMContentLoaded', () => {
     }, 2500);
   }
 
-  function applyProvider(provider: ApiProvider, storedBaseUrl?: string) {
-    apiProviderSelect.value = provider;
-    customUrlGroup.hidden = provider !== 'custom';
-    if (provider === 'custom') {
-      customBaseUrlInput.value = storedBaseUrl && resolveProvider(storedBaseUrl) === 'custom'
-        ? storedBaseUrl
-        : (customBaseUrlInput.value || '');
-    }
-  }
+  // Initial render for the active provider.
+  renderForProvider(currentProviderId, settings.providers[currentProviderId]);
 
-  function resolveBaseUrl(): string | null {
-    const provider = apiProviderSelect.value as ApiProvider;
-    if (provider === 'default') return DEFAULT_BASE_URL;
-    if (provider === 'localhost') return LOCALHOST_BASE_URL;
-    const value = customBaseUrlInput.value.trim();
-    if (!value) return null;
-    try {
-      const u = new URL(value);
-      if (u.protocol !== 'http:' && u.protocol !== 'https:') return null;
-      return value.replace(/\/$/, '');
-    } catch {
-      return null;
-    }
-  }
-
-  chrome.storage.local.get(['baseUrl', 'model', 'apiKeyEncoded'], (result) => {
-    const settings = { ...defaultSettings, ...result };
-    const provider = resolveProvider(settings.baseUrl);
-    applyProvider(provider, settings.baseUrl);
-    modelSelect.value = settings.model || defaultSettings.model;
-    apiKeyInput.value = result.apiKeyEncoded ? deobfuscateApiKey(result.apiKeyEncoded) : '';
+  providerSelect.addEventListener('change', () => {
+    const next = providerSelect.value;
+    if (!isProviderId(next)) return;
+    renderForProvider(next, settings.providers[next]);
   });
 
   apiProviderSelect.addEventListener('change', () => {
-    applyProvider(apiProviderSelect.value as ApiProvider);
-    if (apiProviderSelect.value === 'custom') {
-      customBaseUrlInput.focus();
-    }
+    applyEndpointChoice(currentProviderId, apiProviderSelect.value as EndpointChoice);
+    if (apiProviderSelect.value === 'custom') customBaseUrlInput.focus();
   });
 
   toggleApiKeyBtn.addEventListener('click', () => {
@@ -140,9 +164,10 @@ document.addEventListener('DOMContentLoaded', () => {
     btnClose.addEventListener('click', () => window.close());
   }
 
-  saveBtn.addEventListener('click', () => {
+  saveBtn.addEventListener('click', async () => {
+    const provider = PROVIDERS[currentProviderId];
     const apiKey = apiKeyInput.value.trim();
-    const baseUrl = resolveBaseUrl();
+    const baseUrl = resolveBaseUrl(currentProviderId);
     const model = modelSelect.value;
 
     if (baseUrl === null) {
@@ -151,23 +176,28 @@ document.addEventListener('DOMContentLoaded', () => {
       return;
     }
 
-    if (!apiKey) {
+    if (provider.requiresApiKey && !apiKey) {
       showStatus('Please enter an API key', true);
       apiKeyInput.focus();
       return;
     }
 
-    const storageData = {
-      baseUrl,
-      model,
-      apiKeyEncoded: obfuscateApiKey(apiKey),
+    const updated: StoredSettings = {
+      provider: currentProviderId,
+      providers: {
+        ...settings.providers,
+        [currentProviderId]: {
+          apiKeyEncoded: apiKey ? obfuscateApiKey(apiKey) : '',
+          baseUrl,
+          model,
+        },
+      },
     };
 
-    chrome.storage.local.set(storageData, () => {
-      if (chrome.runtime.lastError) {
-        showStatus('Error saving settings', true);
-        return;
-      }
+    try {
+      await saveSettings(updated);
+      settings.provider = updated.provider;
+      settings.providers = updated.providers;
       saveBtn.textContent = 'Saved!';
       saveBtn.classList.add('saved');
       showStatus('Settings saved');
@@ -175,6 +205,8 @@ document.addEventListener('DOMContentLoaded', () => {
         saveBtn.textContent = 'Save Settings';
         saveBtn.classList.remove('saved');
       }, 2000);
-    });
+    } catch {
+      showStatus('Error saving settings', true);
+    }
   });
 });

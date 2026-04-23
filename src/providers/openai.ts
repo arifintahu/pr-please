@@ -1,0 +1,49 @@
+import { parseJsonResponse, trimBaseUrl, type Provider, type ProviderSettings } from './types';
+
+export const OPENAI_DEFAULT_BASE_URL = 'https://api.openai.com';
+export const OPENAI_DEFAULT_MODEL = 'gpt-5.4-mini';
+export const OPENAI_MODEL_OPTIONS = [
+  'gpt-5.4',
+  'gpt-5.4-mini',
+  'gpt-5.4-nano',
+];
+
+export const openaiProvider: Provider = {
+  id: 'openai',
+  label: 'OpenAI',
+  defaultBaseUrl: OPENAI_DEFAULT_BASE_URL,
+  defaultModel: OPENAI_DEFAULT_MODEL,
+  modelOptions: OPENAI_MODEL_OPTIONS,
+  requiresApiKey: true,
+
+  async generate(prompt: string, settings: ProviderSettings) {
+    if (!settings.apiKey) {
+      throw new Error('OpenAI API key is missing. Open the extension popup to add one.');
+    }
+
+    const base = trimBaseUrl(settings.baseUrl || OPENAI_DEFAULT_BASE_URL);
+    const url = `${base}/v1/chat/completions`;
+
+    const response = await fetch(url, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${settings.apiKey}`,
+      },
+      body: JSON.stringify({
+        model: settings.model,
+        messages: [{ role: 'user', content: prompt }],
+        response_format: { type: 'json_object' },
+      }),
+    });
+
+    if (!response.ok) {
+      const errText = await response.text();
+      throw new Error(`OpenAI error (${response.status}): ${errText.substring(0, 200)}`);
+    }
+    const data = await response.json();
+    const text = data.choices?.[0]?.message?.content;
+    if (!text) throw new Error('Invalid response structure from OpenAI.');
+    return parseJsonResponse(text);
+  },
+};

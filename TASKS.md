@@ -51,25 +51,25 @@ Treat existing title/body as hints instead of overwriting.
 ### Multi-provider support (OpenAI, Anthropic, Ollama)
 Generalize the provider layer beyond Gemini.
 
-- [ ] Extract `Provider` interface in `src/providers/types.ts` (`generate(prompt, settings): Promise<{title, description}>`)
-- [ ] `src/providers/gemini.ts` — migrate existing Gemini code here
-- [ ] `src/providers/openai.ts` — use `/v1/chat/completions`, JSON mode
-- [ ] `src/providers/anthropic.ts` — use Messages API with `response_format` JSON enforcement
-- [ ] `src/providers/ollama.ts` — `POST /api/generate` with `format: "json"`, default base `http://127.0.0.1:11434`
-- [ ] Add `provider` field to `Settings` + storage; migrate existing saved settings (default = `gemini`)
-- [ ] Update popup + in-page modal to show provider dropdown; model list changes per provider
-- [ ] Update `manifest.json` host permissions (add `api.openai.com`, `api.anthropic.com`, `127.0.0.1:11434`)
-- [ ] Update README provider matrix
+- [x] Extract `Provider` interface in `src/providers/types.ts` (`generate(prompt, settings): Promise<{title, description}>`)
+- [x] `src/providers/gemini.ts` — migrate existing Gemini code here
+- [x] `src/providers/openai.ts` — use `/v1/chat/completions`, JSON mode
+- [x] `src/providers/anthropic.ts` — use Messages API (JSON enforced via system prompt + `anthropic-dangerous-direct-browser-access` for CORS)
+- [x] `src/providers/ollama.ts` — `POST /api/generate` with `format: "json"`, default base `http://127.0.0.1:11434`
+- [x] Add `provider` field to `Settings` + storage; migrate existing saved settings (default = `gemini`)
+- [x] Update popup + in-page modal to show provider dropdown; model list changes per provider
+- [x] Update `manifest.json` host permissions (add `api.openai.com`, `api.anthropic.com`, `127.0.0.1:11434`)
+- [ ] Update README provider matrix (docs-only; not done in this pass)
 
 ### Pull linked issues into context
 Enrich the diff context with issue bodies when commits/diff reference `#N`.
 
-- [ ] Scan commits + diff for `#\d+` matches in `src/background.ts`
-- [ ] Fetch up to 3 unique issues via `https://api.github.com/repos/{owner}/{repo}/issues/{n}` (unauth, 60/hr limit)
-- [ ] Cache results per-issue in `chrome.storage.session` (1h TTL)
-- [ ] Append to prompt under `Referenced issues:` block, truncated to 500 chars each
-- [ ] Handle private repos gracefully (404 → skip silently)
-- [ ] Add `host_permissions` for `https://api.github.com/*`
+- [x] Scan commits + diff for `#\d+` matches in `src/background.ts`
+- [x] Fetch up to 3 unique issues via `https://api.github.com/repos/{owner}/{repo}/issues/{n}` (unauth, 60/hr limit)
+- [x] Cache results per-issue in `chrome.storage.session` (1h TTL)
+- [x] Append to prompt under `Referenced issues:` block, truncated to 500 chars each
+- [x] Handle private repos gracefully (404 → skip silently)
+- [x] Add `host_permissions` for `https://api.github.com/*`
 
 ### Streaming output
 Stream the generated content into the preview modal as it arrives.
@@ -84,10 +84,10 @@ Stream the generated content into the preview modal as it arrives.
 ### Regenerate with variations
 Keep the last few generations available for comparison.
 
-- [ ] Depends on: Preview before apply
-- [ ] Maintain a ring buffer of up to 3 results in-memory per tab
-- [ ] Add a small dropdown / `←/→` buttons to flip between them in the preview modal
-- [ ] Clear buffer when the PR URL changes
+- [x] Depends on: Preview before apply
+- [x] Maintain a ring buffer of up to 3 results in-memory per tab
+- [x] Add a small dropdown / `←/→` buttons to flip between them in the preview modal
+- [x] Clear buffer when the PR URL changes (module-level state resets on content-script reload on navigation)
 
 ---
 
