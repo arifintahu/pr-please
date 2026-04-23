@@ -20,9 +20,7 @@ export default defineConfig({
     // One fork so we launch a single Chromium with the extension loaded and
     // reuse it across the test files.
     pool: 'forks',
-    poolOptions: {
-      forks: { singleFork: true },
-    },
+    forks: { singleFork: true },
     fileParallelism: false,
   },
 });

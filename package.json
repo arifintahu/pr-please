@@ -7,8 +7,9 @@
     "dev": "vite",
     "build": "tsc --noEmit && vite build",
     "preview": "vite preview",
-    "test": "npm run build && vitest run",
-    "test:watch": "vitest"
+    "test": "tsc --noEmit && vite build",
+    "test:e2e": "npm run build && vitest run",
+    "test:e2e:watch": "vitest"
   },
   "dependencies": {
     "@google/generative-ai": "^0.2.0"
