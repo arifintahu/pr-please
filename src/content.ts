@@ -1,5 +1,14 @@
 // content.ts
-import { DEFAULT_BASE_URL, DEFAULT_MODEL, MODEL_OPTIONS, obfuscateApiKey, deobfuscateApiKey } from './utils';
+import {
+  DEFAULT_BASE_URL,
+  LOCALHOST_BASE_URL,
+  DEFAULT_MODEL,
+  MODEL_OPTIONS,
+  resolveProvider,
+  obfuscateApiKey,
+  deobfuscateApiKey,
+  type ApiProvider,
+} from './utils';
 
 // ── Icon Helpers ──
 function createSvgIcon(pathData: string, transform?: string): SVGSVGElement {
@@ -382,17 +391,34 @@ function openSettingsModal() {
   intro.appendChild(el('div', { class: 'prp-intro-desc' }, ['Generate PR content directly from your browser using Google\'s Gemini API.']));
   body.appendChild(intro);
 
-  // API key
-  const apiKeyGroup = el('div', { class: 'prp-form-group' });
-  apiKeyGroup.appendChild(el('label', { class: 'prp-label' }, ['API Key']));
-  const apiKeyInput = el('input', { class: 'prp-input', type: 'password', id: 'prp-api-key', placeholder: 'Gemini API Key' });
-  apiKeyGroup.appendChild(apiKeyInput);
-  apiKeyGroup.appendChild(el('div', { class: 'prp-hint' }, ['Stored locally in your browser, never synced']));
-  body.appendChild(apiKeyGroup);
+  // API Endpoint (provider)
+  const providerGroup = el('div', { class: 'prp-form-group' });
+  providerGroup.appendChild(el('label', { class: 'prp-label', for: 'prp-api-provider' }, ['API Endpoint']));
+  const providerSelect = el('select', { class: 'prp-select', id: 'prp-api-provider' });
+  const providerOptions: Array<[ApiProvider, string]> = [
+    ['default', 'Official Google API'],
+    ['localhost', 'Localhost (127.0.0.1:8045)'],
+    ['custom', 'Custom URL'],
+  ];
+  for (const [value, text] of providerOptions) {
+    providerSelect.appendChild(el('option', { value }, [text]));
+  }
+  providerGroup.appendChild(providerSelect);
+  providerGroup.appendChild(el('div', { class: 'prp-hint' }, ['Where requests are sent. Choose Custom for a Gemini-compatible proxy.']));
+  body.appendChild(providerGroup);
+
+  // Custom URL (conditional)
+  const customUrlGroup = el('div', { class: 'prp-form-group', id: 'prp-custom-url-group' });
+  customUrlGroup.hidden = true;
+  customUrlGroup.appendChild(el('label', { class: 'prp-label', for: 'prp-base-url' }, ['Custom URL']));
+  const baseUrlInput = el('input', { class: 'prp-input', id: 'prp-base-url', type: 'url', placeholder: 'https://your-proxy.example.com', autocomplete: 'off', spellcheck: 'false' });
+  customUrlGroup.appendChild(baseUrlInput);
+  customUrlGroup.appendChild(el('div', { class: 'prp-hint' }, ['Must include the scheme (https:// or http://).']));
+  body.appendChild(customUrlGroup);
 
   // Model
   const modelGroup = el('div', { class: 'prp-form-group' });
-  modelGroup.appendChild(el('label', { class: 'prp-label' }, ['Model']));
+  modelGroup.appendChild(el('label', { class: 'prp-label', for: 'prp-model-select' }, ['Model']));
   const modelSelect = el('select', { class: 'prp-select', id: 'prp-model-select' });
   for (const m of MODEL_OPTIONS) {
     const opt = el('option', { value: m }, [m]);
@@ -401,15 +427,28 @@ function openSettingsModal() {
   modelGroup.appendChild(modelSelect);
   body.appendChild(modelGroup);
 
-  // Base URL
-  const baseUrlGroup = el('div', { class: 'prp-form-group' });
-  const baseUrlLabel = el('label', { class: 'prp-label' }, ['Base URL ']);
-  baseUrlLabel.appendChild(el('span', { class: 'prp-label-badge' }, ['Optional']));
-  baseUrlGroup.appendChild(baseUrlLabel);
-  const baseUrlInput = el('input', { class: 'prp-input', id: 'prp-base-url', placeholder: DEFAULT_BASE_URL });
-  baseUrlGroup.appendChild(baseUrlInput);
-  baseUrlGroup.appendChild(el('div', { class: 'prp-hint' }, ['Override only if you use a Gemini-compatible proxy.']));
-  body.appendChild(baseUrlGroup);
+  // API Key
+  const apiKeyGroup = el('div', { class: 'prp-form-group' });
+  apiKeyGroup.appendChild(el('label', { class: 'prp-label', for: 'prp-api-key' }, ['API Key']));
+  const apiKeyInput = el('input', { class: 'prp-input', type: 'password', id: 'prp-api-key', placeholder: 'Enter your Gemini API Key', autocomplete: 'off', spellcheck: 'false' });
+  apiKeyGroup.appendChild(apiKeyInput);
+  apiKeyGroup.appendChild(el('div', { class: 'prp-hint' }, ['Stored locally in your browser, never synced']));
+  body.appendChild(apiKeyGroup);
+
+  function applyProvider(provider: ApiProvider, storedBaseUrl?: string) {
+    providerSelect.value = provider;
+    customUrlGroup.hidden = provider !== 'custom';
+    if (provider === 'custom') {
+      if (storedBaseUrl && resolveProvider(storedBaseUrl) === 'custom') {
+        baseUrlInput.value = storedBaseUrl;
+      }
+    }
+  }
+
+  providerSelect.addEventListener('change', () => {
+    applyProvider(providerSelect.value as ApiProvider);
+    if (providerSelect.value === 'custom') baseUrlInput.focus();
+  });
 
   const saveBtn = el('button', { class: 'prp-save-btn', id: 'prp-save-btn' }, ['Save Settings']);
   body.appendChild(saveBtn);
@@ -422,7 +461,8 @@ function openSettingsModal() {
   chrome.storage.local.get(['baseUrl', 'model', 'apiKeyEncoded'], (res) => {
     apiKeyInput.value = res.apiKeyEncoded ? deobfuscateApiKey(res.apiKeyEncoded) : '';
     modelSelect.value = res.model || DEFAULT_MODEL;
-    baseUrlInput.value = res.baseUrl || DEFAULT_BASE_URL;
+    const storedBase = res.baseUrl || DEFAULT_BASE_URL;
+    applyProvider(resolveProvider(storedBase), storedBase);
   });
 
   closeBtn.addEventListener('click', closeSettingsModal);
@@ -444,7 +484,24 @@ function saveSettings() {
 
   const apiKey = (document.getElementById('prp-api-key') as HTMLInputElement).value.trim();
   const model = (document.getElementById('prp-model-select') as HTMLSelectElement).value;
-  const baseUrl = (document.getElementById('prp-base-url') as HTMLInputElement).value.trim() || DEFAULT_BASE_URL;
+  const provider = (document.getElementById('prp-api-provider') as HTMLSelectElement).value as ApiProvider;
+  const customUrlRaw = (document.getElementById('prp-base-url') as HTMLInputElement).value.trim();
+
+  let baseUrl: string;
+  if (provider === 'default') {
+    baseUrl = DEFAULT_BASE_URL;
+  } else if (provider === 'localhost') {
+    baseUrl = LOCALHOST_BASE_URL;
+  } else {
+    try {
+      const u = new URL(customUrlRaw);
+      if (u.protocol !== 'http:' && u.protocol !== 'https:') throw new Error('bad protocol');
+      baseUrl = customUrlRaw.replace(/\/$/, '');
+    } catch {
+      alert('Invalid Custom URL. It must start with http:// or https://');
+      return;
+    }
+  }
 
   if (!apiKey) {
     alert('Please enter a Gemini API key.');

@@ -7,68 +7,77 @@
   <link rel="stylesheet" href="popup.css">
 </head>
 <body>
-  <div class="settings-popup">
-    <div class="settings-header">
-      <span class="settings-title">
-        <svg viewBox="0 0 16 16"><path d="M7.53 1.282a.5.5 0 01.94 0l.478 1.306a7.492 7.492 0 004.464 4.464l1.305.478a.5.5 0 010 .94l-1.305.478a7.492 7.492 0 00-4.464 4.464l-.478 1.305a.5.5 0 01-.94 0l-.478-1.305a7.492 7.492 0 00-4.464-4.464L1.282 8.47a.5.5 0 010-.94l1.306-.478a7.492 7.492 0 004.464-4.464L7.53 1.282z"/></svg>
+  <main class="settings-popup" aria-labelledby="appTitle">
+    <header class="settings-header">
+      <h1 id="appTitle" class="settings-title">
+        <svg viewBox="0 0 16 16" aria-hidden="true" focusable="false"><path d="M7.53 1.282a.5.5 0 01.94 0l.478 1.306a7.492 7.492 0 004.464 4.464l1.305.478a.5.5 0 010 .94l-1.305.478a7.492 7.492 0 00-4.464 4.464l-.478 1.305a.5.5 0 01-.94 0l-.478-1.305a7.492 7.492 0 00-4.464-4.464L1.282 8.47a.5.5 0 010-.94l1.306-.478a7.492 7.492 0 004.464-4.464L7.53 1.282z"/></svg>
         PR-Please
-      </span>
+      </h1>
       <div class="header-actions">
-        <a class="btn-star" href="https://github.com/arifintahu/pr-please" target="_blank" rel="noopener noreferrer" title="Star on GitHub">
-          <svg viewBox="0 0 16 16"><path d="M8 .25a.75.75 0 01.673.418l1.882 3.815 4.21.612a.75.75 0 01.416 1.279l-3.046 2.97.719 4.192a.75.75 0 01-1.088.791L8 12.347l-3.766 1.98a.75.75 0 01-1.088-.79l.72-4.194L.818 6.374a.75.75 0 01.416-1.28l4.21-.611L7.327.668A.75.75 0 018 .25z"/></svg>
-          Star
+        <a class="btn-star" id="starLink" href="https://github.com/arifintahu/pr-please" target="_blank" rel="noopener noreferrer" aria-label="Star PR-Please on GitHub">
+          <span class="btn-star-label">
+            <svg viewBox="0 0 16 16" aria-hidden="true" focusable="false"><path d="M8 .25a.75.75 0 01.673.418l1.882 3.815 4.21.612a.75.75 0 01.416 1.279l-3.046 2.97.719 4.192a.75.75 0 01-1.088.791L8 12.347l-3.766 1.98a.75.75 0 01-1.088-.79l.72-4.194L.818 6.374a.75.75 0 01.416-1.28l4.21-.611L7.327.668A.75.75 0 018 .25z"/></svg>
+            <span>Star</span>
+          </span>
+          <span class="btn-star-count" id="starCount" aria-label="GitHub stars" hidden>—</span>
         </a>
-        <button class="btn-close" id="btnClose">
-          <svg viewBox="0 0 16 16"><path d="M3.72 3.72a.75.75 0 011.06 0L8 6.94l3.22-3.22a.75.75 0 111.06 1.06L9.06 8l3.22 3.22a.75.75 0 11-1.06 1.06L8 9.06l-3.22 3.22a.75.75 0 01-1.06-1.06L6.94 8 3.72 4.78a.75.75 0 010-1.06z"/></svg>
+        <button class="btn-close" id="btnClose" type="button" aria-label="Close settings">
+          <svg viewBox="0 0 16 16" aria-hidden="true" focusable="false"><path d="M3.72 3.72a.75.75 0 011.06 0L8 6.94l3.22-3.22a.75.75 0 111.06 1.06L9.06 8l3.22 3.22a.75.75 0 11-1.06 1.06L8 9.06l-3.22 3.22a.75.75 0 01-1.06-1.06L6.94 8 3.72 4.78a.75.75 0 010-1.06z"/></svg>
         </button>
       </div>
-    </div>
+    </header>
+
     <div class="settings-body">
-      <div class="intro">
+      <section class="intro" aria-label="Overview">
         <div class="intro-title">Gemini API</div>
         <div class="intro-desc">Generate PR content directly from your browser using Google's Gemini API.</div>
+      </section>
+
+      <div class="form-group">
+        <label class="form-label" for="apiProvider">API Endpoint</label>
+        <select class="form-select" id="apiProvider" aria-describedby="apiProviderHint">
+          <option value="default">Official Google API</option>
+          <option value="localhost">Localhost (127.0.0.1:8045)</option>
+          <option value="custom">Custom URL</option>
+        </select>
+        <div class="form-hint-plain" id="apiProviderHint">Where requests are sent. Choose Custom for a Gemini-compatible proxy.</div>
+      </div>
+
+      <div class="form-group" id="customUrlGroup" hidden>
+        <label class="form-label" for="customBaseUrl">Custom URL</label>
+        <input class="form-input" id="customBaseUrl" type="url" inputmode="url" autocomplete="off" spellcheck="false" placeholder="https://your-proxy.example.com" aria-describedby="customUrlHint" />
+        <div class="form-hint-plain" id="customUrlHint">Must include the scheme (https:// or http://).</div>
       </div>
 
       <div class="form-group">
-        <label class="form-label">API Key</label>
+        <label class="form-label" for="modelSelect">Model</label>
+        <select class="form-select" id="modelSelect"></select>
+      </div>
+
+      <div class="form-group">
+        <label class="form-label" for="apiKey">API Key</label>
         <div class="input-wrapper">
-          <input class="form-input" id="apiKey" type="password" placeholder="Enter your Gemini API Key" style="padding-right:36px" />
-          <span class="input-icon" id="toggleApiKey">
-            <svg viewBox="0 0 16 16"><path d="M8 2c1.981 0 3.671.992 4.933 2.078 1.27 1.091 2.187 2.345 2.637 3.023a1.62 1.62 0 010 1.798c-.45.678-1.367 1.932-2.637 3.023C11.671 13.008 9.981 14 8 14c-1.981 0-3.671-.992-4.933-2.078C1.797 10.831.88 9.577.43 8.899a1.62 1.62 0 010-1.798c.45-.678 1.367-1.932 2.637-3.023C4.329 2.992 6.019 2 8 2zM1.679 7.932a.12.12 0 000 .136c.411.622 1.241 1.75 2.366 2.717C5.176 11.758 6.527 12.5 8 12.5c1.473 0 2.825-.742 3.955-1.715 1.124-.967 1.954-2.096 2.366-2.717a.12.12 0 000-.136c-.412-.621-1.242-1.75-2.366-2.717C10.824 4.242 9.473 3.5 8 3.5c-1.473 0-2.824.742-3.955 1.715-1.124.967-1.954 2.096-2.366 2.717zM8 10a2 2 0 110-4 2 2 0 010 4z"/></svg>
-          </span>
+          <input class="form-input" id="apiKey" type="password" autocomplete="off" spellcheck="false" placeholder="Enter your Gemini API Key" aria-describedby="apiKeyHint" />
+          <button type="button" class="input-icon-btn" id="toggleApiKey" aria-label="Show API key" aria-pressed="false">
+            <svg class="icon-eye" viewBox="0 0 16 16" aria-hidden="true" focusable="false"><path d="M8 2c1.981 0 3.671.992 4.933 2.078 1.27 1.091 2.187 2.345 2.637 3.023a1.62 1.62 0 010 1.798c-.45.678-1.367 1.932-2.637 3.023C11.671 13.008 9.981 14 8 14c-1.981 0-3.671-.992-4.933-2.078C1.797 10.831.88 9.577.43 8.899a1.62 1.62 0 010-1.798c.45-.678 1.367-1.932 2.637-3.023C4.329 2.992 6.019 2 8 2zM1.679 7.932a.12.12 0 000 .136c.411.622 1.241 1.75 2.366 2.717C5.176 11.758 6.527 12.5 8 12.5c1.473 0 2.825-.742 3.955-1.715 1.124-.967 1.954-2.096 2.366-2.717a.12.12 0 000-.136c-.412-.621-1.242-1.75-2.366-2.717C10.824 4.242 9.473 3.5 8 3.5c-1.473 0-2.824.742-3.955 1.715-1.124.967-1.954 2.096-2.366 2.717zM8 10a2 2 0 110-4 2 2 0 010 4z"/></svg>
+          </button>
         </div>
-        <div class="form-hint">
-          <svg viewBox="0 0 16 16"><path d="M4 4a4 4 0 018 0v2h.25c.966 0 1.75.784 1.75 1.75v5.5A1.75 1.75 0 0112.25 15h-8.5A1.75 1.75 0 012 13.25v-5.5C2 6.784 2.784 6 3.75 6H4V4zm8.25 3.5h-8.5a.25.25 0 00-.25.25v5.5c0 .138.112.25.25.25h8.5a.25.25 0 00.25-.25v-5.5a.25.25 0 00-.25-.25zM10.5 6V4a2.5 2.5 0 10-5 0v2h5z" transform="scale(0.75) translate(0,0)"/></svg>
+        <div class="form-hint" id="apiKeyHint">
+          <svg viewBox="0 0 16 16" aria-hidden="true" focusable="false"><path d="M4 4a4 4 0 018 0v2h.25c.966 0 1.75.784 1.75 1.75v5.5A1.75 1.75 0 0112.25 15h-8.5A1.75 1.75 0 012 13.25v-5.5C2 6.784 2.784 6 3.75 6H4V4zm8.25 3.5h-8.5a.25.25 0 00-.25.25v5.5c0 .138.112.25.25.25h8.5a.25.25 0 00.25-.25v-5.5a.25.25 0 00-.25-.25zM10.5 6V4a2.5 2.5 0 10-5 0v2h5z"/></svg>
           Stored locally in your browser, never synced
         </div>
       </div>
 
-      <div class="form-group">
-        <label class="form-label">Model</label>
-        <select class="form-select" id="modelSelect">
-          <!-- Options populated dynamically -->
-        </select>
-      </div>
-
-      <div class="form-group">
-        <label class="form-label">Base URL <span class="label-badge">Optional</span></label>
-        <input class="form-input" id="baseUrl" list="baseUrlOptions" placeholder="https://generativelanguage.googleapis.com" />
-        <datalist id="baseUrlOptions">
-          <option value="https://generativelanguage.googleapis.com">Google Default</option>
-        </datalist>
-        <div class="form-hint-plain">Override only if you use a Gemini-compatible proxy.</div>
-      </div>
-
       <div class="divider"></div>
 
-      <button class="btn-save" id="saveBtn">Save Settings</button>
+      <button class="btn-save" id="saveBtn" type="button">Save Settings</button>
 
-      <div id="statusRow" class="status-row" style="display: none;">
-        <span class="status-dot"></span>
+      <div id="statusRow" class="status-row" role="status" aria-live="polite" hidden>
+        <span class="status-dot" aria-hidden="true"></span>
         <span id="statusText">Settings saved</span>
       </div>
     </div>
-  </div>
+  </main>
   <script type="module" src="popup.ts"></script>
 </body>
 </html>

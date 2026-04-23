@@ -10,7 +10,8 @@
   "host_permissions": [
     "https://github.com/*/*/pull/*",
     "https://github.com/*/*/compare/*",
-    "https://generativelanguage.googleapis.com/v1beta/models/*"
+    "https://generativelanguage.googleapis.com/v1beta/models/*",
+    "http://127.0.0.1:8045/*"
   ],
   "content_security_policy": {
     "extension_pages": "script-src 'self'; object-src 'none'"
