@@ -25,13 +25,13 @@
     }
   },
   "background": {
-    "service_worker": "assets/background.js",
+    "service_worker": "src/background.ts",
     "type": "module"
   },
   "content_scripts": [
     {
       "matches": ["https://github.com/*"],
-      "js": ["assets/content.js"],
+      "js": ["src/content.ts"],
       "run_at": "document_idle"
     }
   ],

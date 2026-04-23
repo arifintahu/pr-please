@@ -1,0 +1,25 @@
+{
+  "name": "pr-please-extension",
+  "private": true,
+  "version": "1.0.0",
+  "type": "module",
+  "scripts": {
+    "dev": "vite",
+    "build": "tsc --noEmit && vite build",
+    "preview": "vite preview",
+    "test": "npm run build && vitest run",
+    "test:watch": "vitest"
+  },
+  "dependencies": {
+    "@google/generative-ai": "^0.2.0"
+  },
+  "devDependencies": {
+    "@crxjs/vite-plugin": "^2.4.0",
+    "@types/chrome": "^0.0.260",
+    "@types/node": "^25.6.0",
+    "typescript": "^5.2.2",
+    "vite": "^5.1.0",
+    "vitest": "^4.1.5",
+    "vitest-environment-web-ext": "^0.0.3"
+  }
+}

@@ -31,12 +31,10 @@ body {
   font-family: var(--font-ui);
   background: var(--bg-canvas);
   color: var(--text-primary);
-  /* Popup width/height constraints */
   width: 360px;
-  min-height: 400px; 
+  min-height: 400px;
 }
 
-/* ── Settings Popup ── */
 .settings-popup {
   width: 100%;
   height: 100%;
@@ -119,76 +117,38 @@ body {
 
 .btn-close svg { width: 16px; height: 16px; fill: currentColor; }
 
-.settings-body { 
-  padding: 20px; 
+.settings-body {
+  padding: 20px;
   flex: 1;
   display: flex;
   flex-direction: column;
 }
 
-/* ── Segmented Toggle ── */
-.field-label {
-  font-size: 12px;
-  font-weight: 500;
-  color: var(--text-secondary);
-  text-transform: uppercase;
-  letter-spacing: 0.5px;
-  margin-bottom: 10px;
-}
-
-.segmented-toggle {
-  display: flex;
-  background: var(--bg-secondary);
-  border: 1px solid var(--border);
+/* ── Intro Card ── */
+.intro {
+  padding: 12px 14px;
+  margin-bottom: 18px;
+  background: var(--accent-green-subtle);
+  border: 1px solid rgba(35,134,54,0.3);
   border-radius: var(--radius-sm);
-  padding: 3px;
-  gap: 2px;
-  margin-bottom: 20px;
-  position: relative;
 }
 
-.seg-option {
-  flex: 1;
-  padding: 8px 12px;
-  text-align: center;
+.intro-title {
   font-size: 13px;
-  font-weight: 500;
-  color: var(--text-secondary);
-  border: none;
-  background: transparent;
-  border-radius: 4px;
-  cursor: pointer;
-  font-family: var(--font-ui);
-  transition: all 200ms;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 6px;
-  z-index: 1;
-}
-
-.seg-option.active {
-  color: #fff;
-  background: var(--accent-green);
-  box-shadow: 0 1px 3px rgba(0,0,0,0.2);
-}
-
-.seg-option:not(.active):hover {
+  font-weight: 600;
   color: var(--text-primary);
-  background: var(--bg-tertiary);
+  margin-bottom: 4px;
 }
 
-.seg-option svg { width: 14px; height: 14px; fill: currentColor; }
+.intro-desc {
+  font-size: 12px;
+  color: var(--text-secondary);
+  line-height: 1.4;
+}
 
 /* ── Form fields ── */
 .form-group {
-  margin-bottom: 18px;
-  animation: fadeField 250ms ease-out;
-}
-
-@keyframes fadeField {
-  from { opacity: 0; transform: translateY(4px); }
-  to { opacity: 1; transform: translateY(0); }
+  margin-bottom: 16px;
 }
 
 .form-label {
@@ -196,7 +156,20 @@ body {
   font-weight: 500;
   color: var(--text-secondary);
   margin-bottom: 6px;
-  display: block;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.label-badge {
+  font-size: 10px;
+  font-weight: 500;
+  padding: 1px 6px;
+  background: var(--bg-tertiary);
+  color: var(--text-muted);
+  border-radius: 10px;
+  text-transform: uppercase;
+  letter-spacing: 0.3px;
 }
 
 .input-wrapper {
@@ -219,6 +192,10 @@ body {
 .form-input:focus {
   border-color: var(--border-focus);
   box-shadow: 0 0 0 3px var(--accent-blue-subtle);
+}
+
+.form-input.custom {
+  border-color: var(--accent-blue);
 }
 
 .form-input::placeholder { color: var(--text-muted); }
@@ -247,6 +224,12 @@ body {
 
 .form-hint svg { width: 12px; height: 12px; fill: currentColor; }
 
+.form-hint-plain {
+  font-size: 11px;
+  color: var(--text-muted);
+  margin-top: 6px;
+}
+
 .form-select {
   width: 100%;
   padding: 8px 36px 8px 12px;
@@ -270,15 +253,13 @@ body {
   box-shadow: 0 0 0 3px var(--accent-blue-subtle);
 }
 
-/* ── Divider ── */
 .divider {
   height: 1px;
   background: var(--border);
   margin: 20px 0;
-  margin-top: auto; /* Push to bottom */
+  margin-top: auto;
 }
 
-/* ── Save Button ── */
 .btn-save {
   width: 100%;
   padding: 10px;
@@ -308,7 +289,6 @@ body {
   background: var(--accent-green);
 }
 
-/* ── Status indicator ── */
 .status-row {
   display: flex;
   align-items: center;
@@ -339,39 +319,4 @@ body {
 @keyframes pulse {
   0%, 100% { opacity: 1; }
   50% { opacity: 0.5; }
-}
-
-/* ── Connection Status ── */
-.connection-status {
-  display: flex;
-  align-items: center;
-  gap: 6px;
-  margin-top: 174px;
-  font-size: 11px;
-  color: var(--text-muted);
-  min-height: 16px;
-}
-
-.connection-status.success { color: var(--accent-green); }
-.connection-status.error { color: var(--danger); }
-
-.connection-dot {
-  width: 6px; height: 6px;
-  border-radius: 50%;
-  background: var(--text-muted);
-  transition: background 0.3s;
-}
-
-.connection-status.success .connection-dot { 
-  background: var(--accent-green); 
-  box-shadow: 0 0 6px var(--accent-green); 
-}
-
-.connection-status.error .connection-dot { 
-  background: var(--danger); 
-}
-
-.connection-status.checking .connection-dot { 
-  background: var(--accent-orange); 
-  animation: pulse 1s infinite; 
 }

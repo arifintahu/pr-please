@@ -1,5 +1,4 @@
-export const DEFAULT_SERVICE_URL = 'http://localhost:3000';
-export const DEFAULT_LOCAL_BASE_URL = 'https://generativelanguage.googleapis.com';
+export const DEFAULT_BASE_URL = 'https://generativelanguage.googleapis.com';
 export const DEFAULT_MODEL = 'gemini-2.5-flash';
 export const MODEL_OPTIONS = [
   'gemini-3-flash',
