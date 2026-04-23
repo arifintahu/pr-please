@@ -11,38 +11,38 @@ Legend: `[ ]` todo · `[~]` in progress · `[x]` done · `[-]` dropped
 ### Preview before apply
 Replace auto-write behavior with a confirmation modal showing the generated title/description.
 
-- [ ] Add preview modal in `src/content.ts` (reuse `el()` + injected styles, no `innerHTML`)
-- [ ] Buttons: **Apply**, **Regenerate**, **Edit** (opens editable textarea), **Discard**
-- [ ] Keyboard: `Esc` closes, `Enter` applies
-- [ ] `Regenerate` re-sends the same `GENERATE_PR` message without refetching the diff (cache last diff in-memory for the session)
-- [ ] Remove the current auto-apply path in `handleGenerate` once the modal is default
-- [ ] Update README screenshot/flow section
+- [x] Add preview modal in `src/content.ts` (reuse `el()` + injected styles, no `innerHTML`)
+- [x] Buttons: **Apply**, **Regenerate**, **Edit** (opens editable textarea), **Discard**
+- [x] Keyboard: `Esc` closes, `Enter` applies (Ctrl/Cmd+Enter — plain Enter would conflict with the body textarea)
+- [x] `Regenerate` re-sends the same `GENERATE_PR` message without refetching the diff (cache last diff in-memory for the session)
+- [x] Remove the current auto-apply path in `handleGenerate` once the modal is default
+- [ ] Update README screenshot/flow section (needs real browser capture)
 
 ### Extra context field
 Let users steer each generation with a one-liner.
 
-- [ ] Add `<textarea>` to the generate modal ("Extra context (optional)")
-- [ ] Plumb through `chrome.runtime.sendMessage` payload as `extraContext: string`
-- [ ] Append to prompt in `constructPrompt()` in `src/background.ts` under a clear `User guidance:` header — only if non-empty
-- [ ] Persist last value per-tab via `chrome.storage.session` so accidental closes don't lose it
+- [x] Add `<textarea>` to the generate modal ("Extra context (optional)")
+- [x] Plumb through `chrome.runtime.sendMessage` payload as `extraContext: string`
+- [x] Append to prompt in `constructPrompt()` in `src/background.ts` under a clear `User guidance:` header — only if non-empty
+- [x] Persist last value per-tab via `chrome.storage.session` so accidental closes don't lose it
 
 ### Respect repo PR template
 Use `.github/PULL_REQUEST_TEMPLATE.md` (or `.github/pull_request_template.md`) when present.
 
-- [ ] In `src/background.ts`, derive `{owner}/{repo}` from `prUrl`
-- [ ] Fetch template via `https://raw.githubusercontent.com/{owner}/{repo}/HEAD/.github/PULL_REQUEST_TEMPLATE.md`
-- [ ] Fall back to case-variant path and `docs/` path; silent fail if 404
-- [ ] Inject template into prompt as `Repo template to fill:` block; instruct model to populate it instead of using its default structure
-- [ ] Add `host_permissions` for `https://raw.githubusercontent.com/*` in `manifest.json`
-- [ ] Cache fetched template per-repo in `chrome.storage.session` for the session
+- [x] In `src/background.ts`, derive `{owner}/{repo}` from `prUrl`
+- [x] Fetch template via `https://raw.githubusercontent.com/{owner}/{repo}/HEAD/.github/PULL_REQUEST_TEMPLATE.md`
+- [x] Fall back to case-variant path and `docs/` path; silent fail if 404
+- [x] Inject template into prompt as `Repo template to fill:` block; instruct model to populate it instead of using its default structure
+- [x] Add `host_permissions` for `https://raw.githubusercontent.com/*` in `manifest.json`
+- [x] Cache fetched template per-repo in `chrome.storage.session` for the session
 
 ### Preserve user-typed content
 Treat existing title/body as hints instead of overwriting.
 
-- [ ] In `src/content.ts`, read current `titleInput.value` and `bodyInput.value` before sending
-- [ ] Forward as `userDraft: { title, body }` in the message
-- [ ] In prompt: "User has already written the following — refine and expand, do not discard:"
-- [ ] Skip overwriting a field if `userDraft.<field>` is non-empty *and* the model's output is empty/weaker (simple length heuristic)
+- [x] In `src/content.ts`, read current `titleInput.value` and `bodyInput.value` before sending
+- [x] Forward as `userDraft: { title, body }` in the message
+- [x] In prompt: "User has already written the following — refine and expand, do not discard:"
+- [x] Skip overwriting a field if `userDraft.<field>` is non-empty *and* the model's output is empty/weaker (simple length heuristic)
 
 ---
 

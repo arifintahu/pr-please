@@ -230,6 +230,102 @@ const INJECTED_STYLES = `
   }
 
   .prp-save-btn:hover { background: #2ea043; }
+
+  /* Preview Modal */
+  .prp-preview-modal { width: 640px; max-width: calc(100vw - 40px); max-height: calc(100vh - 60px); display: flex; flex-direction: column; }
+  .prp-preview-body { padding: 16px 20px; overflow-y: auto; display: flex; flex-direction: column; gap: 14px; flex: 1 1 auto; }
+  .prp-preview-title-input {
+    width: 100%;
+    padding: 8px 12px;
+    background: #161b22;
+    border: 1px solid #30363d;
+    border-radius: 6px;
+    color: #e6edf3;
+    font-size: 14px;
+    font-family: inherit;
+    outline: none;
+    box-sizing: border-box;
+  }
+  .prp-preview-title-input:focus { border-color: #58a6ff; }
+  .prp-preview-body-input {
+    width: 100%;
+    min-height: 240px;
+    max-height: 420px;
+    padding: 10px 12px;
+    background: #161b22;
+    border: 1px solid #30363d;
+    border-radius: 6px;
+    color: #e6edf3;
+    font-size: 13px;
+    font-family: ui-monospace, SFMono-Regular, "SF Mono", Menlo, Consolas, "Liberation Mono", monospace;
+    line-height: 1.5;
+    outline: none;
+    resize: vertical;
+    box-sizing: border-box;
+  }
+  .prp-preview-body-input:focus { border-color: #58a6ff; }
+  .prp-preview-body-input[readonly], .prp-preview-title-input[readonly] { background: #0d1117; color: #c9d1d9; cursor: default; }
+
+  .prp-extra-input {
+    width: 100%;
+    min-height: 52px;
+    padding: 8px 12px;
+    background: #161b22;
+    border: 1px solid #30363d;
+    border-radius: 6px;
+    color: #e6edf3;
+    font-size: 13px;
+    font-family: inherit;
+    outline: none;
+    resize: vertical;
+    box-sizing: border-box;
+  }
+  .prp-extra-input:focus { border-color: #58a6ff; }
+
+  .prp-preview-footer {
+    display: flex;
+    justify-content: flex-end;
+    gap: 8px;
+    padding: 12px 20px;
+    border-top: 1px solid #30363d;
+    background: #0d1117;
+    flex-wrap: wrap;
+  }
+  .prp-action-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 6px 14px;
+    background: #21262d;
+    color: #c9d1d9;
+    border: 1px solid #30363d;
+    border-radius: 6px;
+    font-size: 13px;
+    font-weight: 500;
+    cursor: pointer;
+    font-family: inherit;
+  }
+  .prp-action-btn:hover:not(:disabled) { background: #30363d; color: #e6edf3; }
+  .prp-action-btn:disabled { opacity: 0.5; cursor: not-allowed; }
+  .prp-action-btn.primary { background: #238636; color: #fff; border-color: rgba(27,31,35,0.15); }
+  .prp-action-btn.primary:hover:not(:disabled) { background: #2ea043; }
+  .prp-action-btn.danger { color: #f85149; }
+  .prp-action-btn.danger:hover:not(:disabled) { background: #30363d; color: #ff7b72; }
+
+  .prp-status {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 10px 12px;
+    border-radius: 6px;
+    font-size: 13px;
+    line-height: 1.4;
+  }
+  .prp-status.info { background: rgba(56,139,253,0.12); border: 1px solid rgba(56,139,253,0.35); color: #79c0ff; }
+  .prp-status.error { background: rgba(248,81,73,0.12); border: 1px solid rgba(248,81,73,0.4); color: #ff7b72; }
+  .prp-status svg { width: 14px; height: 14px; fill: currentColor; flex-shrink: 0; }
+  .prp-status.info svg { animation: prp-spin 1s linear infinite; }
+  .prp-hidden { display: none !important; }
 `;
 
 const styleEl = document.createElement('style');
@@ -237,6 +333,61 @@ styleEl.textContent = INJECTED_STYLES;
 document.head.appendChild(styleEl);
 
 let generatedData: { title: string; description: string } | null = null;
+
+interface PreviewHandles {
+  titleInput: HTMLInputElement;
+  bodyTextarea: HTMLTextAreaElement;
+  extraTextarea: HTMLTextAreaElement;
+  status: HTMLDivElement;
+  applyBtn: HTMLButtonElement;
+  regenBtn: HTMLButtonElement;
+  editBtn: HTMLButtonElement;
+  discardBtn: HTMLButtonElement;
+  overlay: HTMLDivElement;
+  setEditable: (editable: boolean) => void;
+  close: () => void;
+  setResult: (data: { title: string; description: string }) => void;
+  setBusy: (busy: boolean) => void;
+  setError: (msg: string | null) => void;
+}
+
+function getDraftFromPage(): { title: string; body: string } {
+  const titleInput = document.querySelector('input[name="pull_request[title]"]') as HTMLInputElement | null;
+  const bodyInput = document.querySelector('textarea[name="pull_request[body]"]') as HTMLTextAreaElement | null;
+  return {
+    title: titleInput?.value ?? '',
+    body: bodyInput?.value ?? '',
+  };
+}
+
+function currentPrUrl(): string {
+  return window.location.href.split('?')[0];
+}
+
+function extraContextKey(prUrl: string): string {
+  return `prp:extra:${prUrl}`;
+}
+
+async function loadExtraContext(prUrl: string): Promise<string> {
+  if (!chrome?.storage?.session) return '';
+  return new Promise((resolve) => {
+    chrome.storage.session.get([extraContextKey(prUrl)], (res) => {
+      resolve((res?.[extraContextKey(prUrl)] as string) || '');
+    });
+  });
+}
+
+async function saveExtraContext(prUrl: string, value: string): Promise<void> {
+  if (!chrome?.storage?.session) return;
+  return new Promise((resolve) => {
+    chrome.storage.session.set({ [extraContextKey(prUrl)]: value }, () => resolve());
+  });
+}
+
+function collectCommits(): string[] {
+  const commitElements = document.querySelectorAll('.js-commits-list-item p.mb-1 a.markdown-title, .commit-message code a');
+  return Array.from(commitElements).map(el => el.textContent?.trim()).filter(Boolean) as string[];
+}
 
 function el<K extends keyof HTMLElementTagNameMap>(
   tag: K,
@@ -288,83 +439,256 @@ function injectButton() {
   settingsBtn.addEventListener('click', openSettingsModal);
 }
 
-async function handleGenerate(e: Event) {
-  const btn = e.currentTarget as HTMLButtonElement;
+async function handleGenerate() {
+  if (document.getElementById('prp-preview-modal')) return;
+  generatedData = null;
+  const prUrl = currentPrUrl();
+  const savedExtra = await loadExtraContext(prUrl);
+  const preview = openPreviewModal(savedExtra);
+  await runGeneration(preview, { useCachedDiff: false });
+}
 
-  const originalChildren: Node[] = [];
-  btn.childNodes.forEach(n => originalChildren.push(n.cloneNode(true)));
-
-  function restoreBtn() {
-    btn.textContent = '';
-    originalChildren.forEach(n => btn.appendChild(n.cloneNode(true)));
-    btn.disabled = false;
-    btn.classList.remove('loading', 'success', 'error');
-  }
-
-  function setBtnState(iconName: 'sparkle' | 'success' | 'error' | 'close', text: string, svgFactory?: () => SVGSVGElement) {
-    btn.textContent = '';
-    btn.appendChild(svgFactory ? svgFactory() : icon(iconName));
-    btn.appendChild(document.createTextNode(` ${text}`));
-  }
-
-  btn.disabled = true;
-  btn.classList.add('loading');
-  setBtnState('sparkle', 'Generating...', createSpinnerIcon);
+async function runGeneration(preview: PreviewHandles, opts: { useCachedDiff: boolean }) {
+  preview.setBusy(true);
+  preview.setError(null);
 
   try {
     if (!chrome?.runtime?.sendMessage) {
       throw new Error('Extension context invalidated. Please refresh the page.');
     }
 
-    const commitElements = document.querySelectorAll('.js-commits-list-item p.mb-1 a.markdown-title, .commit-message code a');
-    const commits = Array.from(commitElements).map(el => el.textContent?.trim()).filter(Boolean) as string[];
-    const prUrl = window.location.href.split('?')[0];
+    const prUrl = currentPrUrl();
+    const extraContext = preview.extraTextarea.value.trim();
+    await saveExtraContext(prUrl, extraContext);
 
     const response = await chrome.runtime.sendMessage({
       action: 'GENERATE_PR',
-      commits,
-      prUrl
+      commits: collectCommits(),
+      prUrl,
+      extraContext,
+      userDraft: getDraftFromPage(),
+      useCachedDiff: opts.useCachedDiff,
     });
 
+    if (!response) {
+      throw new Error('No response from background service worker.');
+    }
     if (response.error) {
       throw new Error(response.error);
     }
 
-    generatedData = response;
-    applyResult();
-    btn.classList.add('success');
-    setBtnState('success', 'Applied!');
-
-    setTimeout(restoreBtn, 3000);
+    generatedData = { title: response.title, description: response.description };
+    preview.setResult(generatedData);
   } catch (err: any) {
     console.error('PR-Please generation error:', err);
-    btn.classList.add('error');
-    setBtnState('error', 'Failed');
-
-    const safeMessage = (err.message && !err.message.includes('<'))
+    const safeMessage = (err?.message && !String(err.message).includes('<'))
       ? err.message
       : 'An unexpected error occurred. Check the console for details.';
-    alert(`Generation failed: ${safeMessage}`);
-
-    setTimeout(restoreBtn, 3000);
+    preview.setError(safeMessage);
+  } finally {
+    preview.setBusy(false);
   }
 }
 
-function applyResult() {
-  if (!generatedData) return;
+function applyResult(data: { title: string; description: string }) {
+  const titleInput = document.querySelector('input[name="pull_request[title]"]') as HTMLInputElement | null;
+  const bodyInput = document.querySelector('textarea[name="pull_request[body]"]') as HTMLTextAreaElement | null;
 
-  const titleInput = document.querySelector('input[name="pull_request[title]"]') as HTMLInputElement;
-  const bodyInput = document.querySelector('textarea[name="pull_request[body]"]') as HTMLTextAreaElement;
-
-  if (titleInput && generatedData.title) {
-    titleInput.value = generatedData.title;
+  if (titleInput && shouldOverwrite(titleInput.value, data.title)) {
+    titleInput.value = data.title;
     titleInput.dispatchEvent(new Event('input', { bubbles: true }));
   }
 
-  if (bodyInput && generatedData.description) {
-    bodyInput.value = generatedData.description;
+  if (bodyInput && shouldOverwrite(bodyInput.value, data.description)) {
+    bodyInput.value = data.description;
     bodyInput.dispatchEvent(new Event('input', { bubbles: true }));
   }
+}
+
+function shouldOverwrite(existing: string, generated: string): boolean {
+  const ex = existing.trim();
+  const gen = generated.trim();
+  if (!ex) return true;
+  if (!gen) return false;
+  return gen.length >= ex.length;
+}
+
+function openPreviewModal(initialExtra: string): PreviewHandles {
+  const overlay = el('div', { id: 'prp-preview-modal', class: 'prp-modal-overlay' });
+  const modal = el('div', { class: 'prp-modal prp-preview-modal' });
+
+  const header = el('div', { class: 'prp-modal-header' });
+  const titleDiv = el('div', { class: 'prp-modal-title' }, [icon('sparkle'), ' PR-Please Preview']);
+  const closeBtn = el('button', { class: 'prp-close-btn', type: 'button' }, [icon('close')]);
+  header.appendChild(titleDiv);
+  header.appendChild(closeBtn);
+
+  const body = el('div', { class: 'prp-preview-body' });
+
+  const status = el('div', { class: 'prp-status info' }) as HTMLDivElement;
+  status.appendChild(createSpinnerIcon());
+  status.appendChild(document.createTextNode(' Generating…'));
+  body.appendChild(status);
+
+  const titleGroup = el('div', { class: 'prp-form-group' });
+  titleGroup.appendChild(el('label', { class: 'prp-label', for: 'prp-preview-title' }, ['Title']));
+  const titleInput = el('input', {
+    class: 'prp-preview-title-input',
+    id: 'prp-preview-title',
+    type: 'text',
+    placeholder: 'Generated title will appear here…',
+    readonly: '',
+    autocomplete: 'off',
+    spellcheck: 'false',
+  }) as HTMLInputElement;
+  titleGroup.appendChild(titleInput);
+  body.appendChild(titleGroup);
+
+  const bodyGroup = el('div', { class: 'prp-form-group' });
+  bodyGroup.appendChild(el('label', { class: 'prp-label', for: 'prp-preview-body' }, ['Description']));
+  const bodyTextarea = el('textarea', {
+    class: 'prp-preview-body-input',
+    id: 'prp-preview-body',
+    placeholder: 'Generated description will appear here…',
+    readonly: '',
+  }) as HTMLTextAreaElement;
+  bodyGroup.appendChild(bodyTextarea);
+  body.appendChild(bodyGroup);
+
+  const extraGroup = el('div', { class: 'prp-form-group' });
+  extraGroup.appendChild(el('label', { class: 'prp-label', for: 'prp-extra-context' }, [
+    'Extra context ',
+    el('span', { class: 'prp-label-badge' }, ['Optional']),
+  ]));
+  const extraTextarea = el('textarea', {
+    class: 'prp-extra-input',
+    id: 'prp-extra-context',
+    placeholder: 'Steer the next generation (e.g. "focus on migration safety")…',
+  }) as HTMLTextAreaElement;
+  extraTextarea.value = initialExtra;
+  extraGroup.appendChild(extraTextarea);
+  extraGroup.appendChild(el('div', { class: 'prp-hint' }, ['Saved per-tab until you close the browser.']));
+  body.appendChild(extraGroup);
+
+  const footer = el('div', { class: 'prp-preview-footer' });
+  const discardBtn = el('button', { type: 'button', class: 'prp-action-btn danger' }, ['Discard']) as HTMLButtonElement;
+  const editBtn = el('button', { type: 'button', class: 'prp-action-btn' }, ['Edit']) as HTMLButtonElement;
+  const regenBtn = el('button', { type: 'button', class: 'prp-action-btn' }, ['Regenerate']) as HTMLButtonElement;
+  const applyBtn = el('button', { type: 'button', class: 'prp-action-btn primary' }, ['Apply']) as HTMLButtonElement;
+  footer.appendChild(discardBtn);
+  footer.appendChild(editBtn);
+  footer.appendChild(regenBtn);
+  footer.appendChild(applyBtn);
+
+  modal.appendChild(header);
+  modal.appendChild(body);
+  modal.appendChild(footer);
+  overlay.appendChild(modal);
+  document.body.appendChild(overlay);
+
+  let editable = false;
+  function setEditable(v: boolean) {
+    editable = v;
+    if (v) {
+      titleInput.removeAttribute('readonly');
+      bodyTextarea.removeAttribute('readonly');
+      editBtn.textContent = 'Editing';
+      editBtn.disabled = true;
+      titleInput.focus();
+    } else {
+      titleInput.setAttribute('readonly', '');
+      bodyTextarea.setAttribute('readonly', '');
+      editBtn.textContent = 'Edit';
+      editBtn.disabled = !generatedData;
+    }
+  }
+
+  function close() {
+    overlay.remove();
+    document.removeEventListener('keydown', onKey);
+  }
+
+  function setBusy(busy: boolean) {
+    applyBtn.disabled = busy || !generatedData;
+    regenBtn.disabled = busy;
+    editBtn.disabled = busy || !generatedData;
+    extraTextarea.disabled = busy;
+    if (busy) {
+      status.classList.remove('prp-hidden', 'error');
+      status.classList.add('info');
+      status.textContent = '';
+      status.appendChild(createSpinnerIcon());
+      status.appendChild(document.createTextNode(' Generating…'));
+    } else {
+      status.classList.add('prp-hidden');
+    }
+  }
+
+  function setError(msg: string | null) {
+    if (!msg) {
+      if (!status.classList.contains('info')) status.classList.add('prp-hidden');
+      return;
+    }
+    status.classList.remove('prp-hidden', 'info');
+    status.classList.add('error');
+    status.textContent = '';
+    status.appendChild(icon('error'));
+    status.appendChild(document.createTextNode(' ' + msg));
+  }
+
+  function setResult(data: { title: string; description: string }) {
+    titleInput.value = data.title;
+    bodyTextarea.value = data.description;
+    applyBtn.disabled = false;
+    editBtn.disabled = editable;
+  }
+
+  const handles: PreviewHandles = {
+    titleInput, bodyTextarea, extraTextarea, status,
+    applyBtn, regenBtn, editBtn, discardBtn, overlay,
+    setEditable, close, setResult, setBusy, setError,
+  };
+
+  function onKey(e: KeyboardEvent) {
+    if (!document.body.contains(overlay)) return;
+    if (e.key === 'Escape') {
+      e.preventDefault();
+      close();
+    } else if (e.key === 'Enter' && (e.ctrlKey || e.metaKey)) {
+      if (!applyBtn.disabled) {
+        e.preventDefault();
+        applyBtn.click();
+      }
+    }
+  }
+  document.addEventListener('keydown', onKey);
+
+  overlay.addEventListener('click', (e) => {
+    if (e.target === overlay) close();
+  });
+  closeBtn.addEventListener('click', close);
+  discardBtn.addEventListener('click', close);
+  editBtn.addEventListener('click', () => setEditable(true));
+  regenBtn.addEventListener('click', () => {
+    runGeneration(handles, { useCachedDiff: true });
+  });
+  applyBtn.addEventListener('click', () => {
+    const data = {
+      title: titleInput.value,
+      description: bodyTextarea.value,
+    };
+    applyResult(data);
+    close();
+  });
+
+  extraTextarea.addEventListener('input', () => {
+    saveExtraContext(currentPrUrl(), extraTextarea.value);
+  });
+
+  setEditable(false);
+  applyBtn.disabled = true;
+
+  return handles;
 }
 
 function openSettingsModal() {
