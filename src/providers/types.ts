@@ -6,9 +6,15 @@ export interface ProviderSettings {
   model: string;
 }
 
+export interface TokenUsage {
+  inputTokens: number;
+  outputTokens: number;
+}
+
 export interface GenerationResult {
   title: string;
   description: string;
+  usage?: TokenUsage;
 }
 
 export interface Provider {

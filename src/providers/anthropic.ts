@@ -49,6 +49,13 @@ export const anthropicProvider: Provider = {
     const data = await response.json();
     const text = data.content?.[0]?.text;
     if (!text) throw new Error('Invalid response structure from Anthropic.');
-    return parseJsonResponse(text);
+    const parsed = parseJsonResponse(text);
+    if (data.usage) {
+      parsed.usage = {
+        inputTokens: data.usage.input_tokens ?? 0,
+        outputTokens: data.usage.output_tokens ?? 0,
+      };
+    }
+    return parsed;
   },
 };

@@ -80,6 +80,23 @@
 
       <div class="divider"></div>
 
+      <div class="form-group">
+        <label class="form-label" for="redactInput">Diff Redaction</label>
+        <div class="tag-input-wrapper" id="redactTags" aria-label="Redact patterns"></div>
+        <div class="tag-add-row">
+          <input class="form-input tag-input" id="redactInput" type="text"
+            placeholder="e.g. secrets/**, *.pem" autocomplete="off" spellcheck="false"
+            aria-label="Add redact pattern" />
+          <button type="button" class="btn-tag-add" id="redactAddBtn">Add</button>
+        </div>
+        <div class="form-hint-plain">
+          Files matching these glob patterns are replaced with <code>(Redacted: path)</code> before the diff is sent.
+          <button type="button" class="btn-link" id="redactRecommendedBtn">Add recommended</button>
+        </div>
+      </div>
+
+      <div class="divider"></div>
+
       <button class="btn-save" id="saveBtn" type="button">Save Settings</button>
 
       <div id="statusRow" class="status-row" role="status" aria-live="polite" hidden>

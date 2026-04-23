@@ -33,6 +33,7 @@ export interface ProviderConfig {
 export interface StoredSettings {
   provider: ProviderId;
   providers: Record<ProviderId, ProviderConfig>;
+  redactPatterns: string[];
 }
 
 function emptyConfigs(): Record<ProviderId, ProviderConfig> {
@@ -46,7 +47,7 @@ function emptyConfigs(): Record<ProviderId, ProviderConfig> {
 
 export function loadSettings(): Promise<StoredSettings> {
   return new Promise((resolve) => {
-    chrome.storage.local.get(['provider', 'providers', 'apiKeyEncoded', 'baseUrl', 'model'], (res) => {
+    chrome.storage.local.get(['provider', 'providers', 'redactPatterns', 'apiKeyEncoded', 'baseUrl', 'model'], (res) => {
       const configs = emptyConfigs();
 
       if (res.providers && typeof res.providers === 'object') {
@@ -70,7 +71,8 @@ export function loadSettings(): Promise<StoredSettings> {
       }
 
       const provider = isProviderId(res.provider) ? res.provider : DEFAULT_PROVIDER;
-      resolve({ provider, providers: configs });
+      const redactPatterns = Array.isArray(res.redactPatterns) ? res.redactPatterns as string[] : [];
+      resolve({ provider, providers: configs, redactPatterns });
     });
   });
 }
@@ -78,7 +80,7 @@ export function loadSettings(): Promise<StoredSettings> {
 export function saveSettings(settings: StoredSettings): Promise<void> {
   return new Promise((resolve, reject) => {
     chrome.storage.local.set(
-      { provider: settings.provider, providers: settings.providers },
+      { provider: settings.provider, providers: settings.providers, redactPatterns: settings.redactPatterns },
       () => {
         if (chrome.runtime.lastError) reject(new Error(chrome.runtime.lastError.message));
         else resolve();

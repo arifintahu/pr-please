@@ -66,10 +66,65 @@ document.addEventListener('DOMContentLoaded', async () => {
   const statusText = document.getElementById('statusText') as HTMLSpanElement;
   const starCount = document.getElementById('starCount') as HTMLSpanElement;
   const providerIntroTitle = document.getElementById('providerIntroTitle') as HTMLDivElement;
+  const redactTagsEl = document.getElementById('redactTags') as HTMLDivElement;
+  const redactInput = document.getElementById('redactInput') as HTMLInputElement;
+  const redactAddBtn = document.getElementById('redactAddBtn') as HTMLButtonElement;
+  const redactRecommendedBtn = document.getElementById('redactRecommendedBtn') as HTMLButtonElement;
+
+  const RECOMMENDED_PATTERNS = ['.env*', 'secrets/**', '*.pem', '*.key', '*.cert'];
 
   loadStarCount(starCount);
 
   const settings: StoredSettings = await loadSettings();
+
+  let redactPatterns: string[] = [...settings.redactPatterns];
+
+  function renderTags() {
+    redactTagsEl.textContent = '';
+    for (const pattern of redactPatterns) {
+      const chip = document.createElement('span');
+      chip.className = 'tag-chip';
+      chip.textContent = pattern;
+      const removeBtn = document.createElement('button');
+      removeBtn.className = 'tag-chip-remove';
+      removeBtn.type = 'button';
+      removeBtn.setAttribute('aria-label', `Remove ${pattern}`);
+      removeBtn.textContent = '×';
+      removeBtn.addEventListener('click', () => {
+        redactPatterns = redactPatterns.filter(p => p !== pattern);
+        renderTags();
+      });
+      chip.appendChild(removeBtn);
+      redactTagsEl.appendChild(chip);
+    }
+  }
+
+  function addPattern(pattern: string) {
+    const p = pattern.trim();
+    if (!p || redactPatterns.includes(p)) return;
+    redactPatterns.push(p);
+    renderTags();
+  }
+
+  redactAddBtn.addEventListener('click', () => {
+    addPattern(redactInput.value);
+    redactInput.value = '';
+    redactInput.focus();
+  });
+
+  redactInput.addEventListener('keydown', (e) => {
+    if (e.key === 'Enter') {
+      e.preventDefault();
+      addPattern(redactInput.value);
+      redactInput.value = '';
+    }
+  });
+
+  redactRecommendedBtn.addEventListener('click', () => {
+    for (const p of RECOMMENDED_PATTERNS) addPattern(p);
+  });
+
+  renderTags();
   let currentProviderId: ProviderId = settings.provider || DEFAULT_PROVIDER;
 
   function populateModelOptions(providerId: ProviderId, selectedModel: string) {
@@ -192,6 +247,7 @@ document.addEventListener('DOMContentLoaded', async () => {
           model,
         },
       },
+      redactPatterns,
     };
 
     try {

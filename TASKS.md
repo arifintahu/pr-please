@@ -96,26 +96,26 @@ Keep the last few generations available for comparison.
 ### Apply to existing PRs
 Let users regenerate on already-open PRs, not just the creation page.
 
-- [ ] Detect the "Edit" mode of an existing PR (`/pull/N` without creation form)
-- [ ] Inject button into the edit-description toolbar
-- [ ] Fetch diff from the existing `.diff` URL
-- [ ] Same preview modal flow; write into the edit-description textarea
+- [x] Detect the "Edit" mode of an existing PR (`/pull/N` without creation form)
+- [x] Inject button into the edit-description toolbar (primary: after title input; fallback: before form actions when only body textarea present)
+- [x] Fetch diff from the existing `.diff` URL (works via `prUrl + '.diff'` — same path as create flow)
+- [x] Same preview modal flow; write into the edit-description textarea
 
 ### Diff redaction
 Let users blocklist paths before the diff leaves the browser.
 
-- [ ] Add `redactPatterns: string[]` setting (glob syntax)
-- [ ] In `filterDiff()`, match filename against patterns; replace body with `(Redacted: <path>)`
-- [ ] Add default suggestions (`.env*`, `secrets/**`, `*.pem`) behind a "Recommended" checkbox
-- [ ] Settings UI: tag-style input with add/remove
+- [x] Add `redactPatterns: string[]` setting (glob syntax) to `StoredSettings`
+- [x] In `filterDiff()`, match filename against patterns; replace body with `(Redacted: <path>)`
+- [x] Add default suggestions (`.env*`, `secrets/**`, `*.pem`, `*.key`, `*.cert`) via "Recommended" button
+- [x] Settings UI: tag-style input with add/remove in popup and in-page modal
 
 ### Cost/token estimate
 Surface approximate cost per generation.
 
-- [ ] Read response metadata (`usageMetadata` for Gemini, `usage` for OpenAI/Anthropic)
-- [ ] Maintain a provider→price-per-1M-tokens table; note prices are static & may drift
-- [ ] Show `~ $0.0012 · 3.4k in / 680 out` under the preview
-- [ ] Optional: running total in the popup (stored locally)
+- [x] Read response metadata (`usageMetadata` for Gemini, `usage` for OpenAI/Anthropic, `eval_count` for Ollama)
+- [x] Maintain a provider→price-per-1M-tokens table in `src/costs.ts`; note prices are static & may drift
+- [x] Show `~ $0.0012 · 3.4k in / 680 out` under the preview (cost row in preview modal)
+- [ ] Optional: running total in the popup (stored locally) — skipped (optional)
 
 ---
 

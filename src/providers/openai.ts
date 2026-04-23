@@ -44,6 +44,13 @@ export const openaiProvider: Provider = {
     const data = await response.json();
     const text = data.choices?.[0]?.message?.content;
     if (!text) throw new Error('Invalid response structure from OpenAI.');
-    return parseJsonResponse(text);
+    const parsed = parseJsonResponse(text);
+    if (data.usage) {
+      parsed.usage = {
+        inputTokens: data.usage.prompt_tokens ?? 0,
+        outputTokens: data.usage.completion_tokens ?? 0,
+      };
+    }
+    return parsed;
   },
 };

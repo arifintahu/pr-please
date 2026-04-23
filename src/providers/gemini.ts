@@ -33,7 +33,16 @@ export const geminiProvider: Provider = {
         generationConfig: { responseMimeType: 'application/json' } as any,
       });
       const result = await jsonModel.generateContent(prompt);
-      return parseJsonResponse((await result.response).text());
+      const resp = await result.response;
+      const parsed = parseJsonResponse(resp.text());
+      const meta = (resp as any).usageMetadata;
+      if (meta) {
+        parsed.usage = {
+          inputTokens: meta.promptTokenCount ?? 0,
+          outputTokens: meta.candidatesTokenCount ?? 0,
+        };
+      }
+      return parsed;
     }
 
     const url = `${trimBaseUrl(settings.baseUrl)}/v1beta/models/${settings.model}:generateContent?key=${encodeURIComponent(settings.apiKey)}`;
@@ -53,6 +62,14 @@ export const geminiProvider: Provider = {
     const data = await response.json();
     const text = data.candidates?.[0]?.content?.parts?.[0]?.text;
     if (!text) throw new Error('Invalid response structure from Gemini.');
-    return parseJsonResponse(text);
+    const parsed = parseJsonResponse(text);
+    const meta = data.usageMetadata;
+    if (meta) {
+      parsed.usage = {
+        inputTokens: meta.promptTokenCount ?? 0,
+        outputTokens: meta.candidatesTokenCount ?? 0,
+      };
+    }
+    return parsed;
   },
 };

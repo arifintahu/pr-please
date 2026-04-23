@@ -231,6 +231,33 @@ const INJECTED_STYLES = `
 
   .prp-save-btn:hover { background: #2ea043; }
 
+  /* Tag input */
+  .prp-tag-wrapper { display: flex; flex-wrap: wrap; gap: 5px; margin-bottom: 6px; min-height: 24px; }
+  .prp-tag {
+    display: inline-flex; align-items: center; gap: 3px;
+    padding: 1px 8px 1px 9px;
+    background: #21262d; border: 1px solid #30363d; border-radius: 20px;
+    font-size: 11px; color: #c9d1d9;
+    font-family: ui-monospace, SFMono-Regular, "SF Mono", Menlo, Consolas, monospace;
+  }
+  .prp-tag-remove {
+    background: none; border: none; color: #8b949e; cursor: pointer; padding: 0; font-size: 13px; line-height: 1;
+  }
+  .prp-tag-remove:hover { color: #f85149; }
+  .prp-tag-add-row { display: flex; gap: 6px; }
+  .prp-tag-input {
+    flex: 1; padding: 5px 10px; background: #161b22; border: 1px solid #30363d;
+    border-radius: 6px; color: #e6edf3; font-size: 12px;
+    font-family: ui-monospace, SFMono-Regular, "SF Mono", Menlo, Consolas, monospace;
+    outline: none;
+  }
+  .prp-tag-input:focus { border-color: #58a6ff; }
+  .prp-tag-btn {
+    padding: 5px 10px; background: #21262d; border: 1px solid #30363d; border-radius: 6px;
+    color: #c9d1d9; font-size: 12px; cursor: pointer; white-space: nowrap; font-family: inherit;
+  }
+  .prp-tag-btn:hover { background: #30363d; }
+
   /* Preview Modal */
   .prp-preview-modal { width: 640px; max-width: calc(100vw - 40px); max-height: calc(100vh - 60px); display: flex; flex-direction: column; }
   .prp-preview-body { padding: 16px 20px; overflow-y: auto; display: flex; flex-direction: column; gap: 14px; flex: 1 1 auto; }
@@ -354,6 +381,13 @@ const INJECTED_STYLES = `
   .prp-nav-btn:hover:not(:disabled) { background: #30363d; }
   .prp-nav-btn:disabled { opacity: 0.4; cursor: not-allowed; }
   .prp-variation-label { min-width: 32px; text-align: center; font-variant-numeric: tabular-nums; }
+
+  .prp-cost {
+    font-size: 11px;
+    color: #484f58;
+    padding: 2px 0 0;
+    font-variant-numeric: tabular-nums;
+  }
 `;
 
 const styleEl = document.createElement('style');
@@ -379,7 +413,7 @@ interface PreviewHandles {
   overlay: HTMLDivElement;
   setEditable: (editable: boolean) => void;
   close: () => void;
-  setResult: (data: { title: string; description: string }) => void;
+  setResult: (data: { title: string; description: string; costEstimate?: string }) => void;
   setBusy: (busy: boolean) => void;
   setError: (msg: string | null) => void;
 }
@@ -445,31 +479,57 @@ function el<K extends keyof HTMLElementTagNameMap>(
   return elem;
 }
 
-function injectButton() {
-  const titleInput = document.querySelector('input[name="pull_request[title]"]');
-  if (!titleInput || document.getElementById('pr-please-wrapper')) return;
-
-  const wrapper = el('div', { id: 'pr-please-wrapper', class: 'pr-please-wrapper' });
+function buildButtonRow(wrapperId: string): { wrapper: HTMLDivElement; generateBtn: HTMLButtonElement; settingsBtn: HTMLButtonElement } {
+  const wrapper = el('div', { id: wrapperId, class: 'pr-please-wrapper' }) as HTMLDivElement;
   const row = el('div', { class: 'prp-row' });
-
   const generateBtn = el('button', { type: 'button', class: 'prp-btn', id: 'prp-generate-btn' }, [
-    icon('sparkle'), ' Generate with AI'
-  ]);
-
+    icon('sparkle'), ' Generate with AI',
+  ]) as HTMLButtonElement;
   const settingsBtn = el('button', { type: 'button', class: 'prp-settings-btn', id: 'prp-settings-btn', title: 'Settings' }, [
-    icon('gear')
-  ]);
-
+    icon('gear'),
+  ]) as HTMLButtonElement;
   row.appendChild(generateBtn);
   row.appendChild(settingsBtn);
   wrapper.appendChild(row);
-
-  const textExpander = titleInput.closest('text-expander');
-  const targetElement = textExpander || titleInput;
-  targetElement.insertAdjacentElement('afterend', wrapper);
-
   generateBtn.addEventListener('click', handleGenerate);
   settingsBtn.addEventListener('click', openSettingsModal);
+  return { wrapper, generateBtn, settingsBtn };
+}
+
+function isExistingPrPage(): boolean {
+  return /\/pull\/\d+/.test(window.location.pathname) && !/\/compare\//.test(window.location.pathname);
+}
+
+function injectButton() {
+  const titleInput = document.querySelector('input[name="pull_request[title]"]') as HTMLInputElement | null;
+
+  if (titleInput && !document.getElementById('pr-please-wrapper')) {
+    // Create-PR form or existing PR edit form with title visible.
+    const { wrapper } = buildButtonRow('pr-please-wrapper');
+    const textExpander = titleInput.closest('text-expander');
+    (textExpander || titleInput).insertAdjacentElement('afterend', wrapper);
+    return;
+  }
+
+  // Fallback: existing PR body-only edit form (title input not found but textarea is).
+  if (isExistingPrPage() && !document.getElementById('pr-please-edit-wrapper')) {
+    const bodyTextarea = document.querySelector('textarea[name="pull_request[body]"]') as HTMLTextAreaElement | null;
+    if (!bodyTextarea) return;
+
+    // Don't double-inject if the primary wrapper is already in the same form.
+    const form = bodyTextarea.closest('form');
+    if (form && form.querySelector('#pr-please-wrapper')) return;
+
+    const { wrapper } = buildButtonRow('pr-please-edit-wrapper');
+
+    // Prefer injecting before the form's action buttons row, fall back to after textarea.
+    const actionRow = form?.querySelector('.form-actions, .comment-form-actions, [class*="actions"]');
+    if (actionRow) {
+      actionRow.insertAdjacentElement('beforebegin', wrapper);
+    } else {
+      bodyTextarea.insertAdjacentElement('afterend', wrapper);
+    }
+  }
 }
 
 async function handleGenerate() {
@@ -513,7 +573,7 @@ async function runGeneration(preview: PreviewHandles, opts: { useCachedDiff: boo
     }
 
     generatedData = { title: response.title, description: response.description };
-    preview.setResult(generatedData);
+    preview.setResult({ ...generatedData, costEstimate: response.costEstimate });
   } catch (err: any) {
     console.error('PR-Please generation error:', err);
     const safeMessage = (err?.message && !String(err.message).includes('<'))
@@ -589,6 +649,9 @@ function openPreviewModal(initialExtra: string): PreviewHandles {
   }) as HTMLTextAreaElement;
   bodyGroup.appendChild(bodyTextarea);
   body.appendChild(bodyGroup);
+
+  const costRow = el('div', { class: 'prp-cost prp-hidden' });
+  body.appendChild(costRow);
 
   const extraGroup = el('div', { class: 'prp-form-group' });
   extraGroup.appendChild(el('label', { class: 'prp-label', for: 'prp-extra-context' }, [
@@ -708,14 +771,20 @@ function openPreviewModal(initialExtra: string): PreviewHandles {
     };
   }
 
-  function setResult(data: { title: string; description: string }) {
+  function setResult(data: { title: string; description: string; costEstimate?: string }) {
     if (variations.length >= MAX_VARIATIONS) variations.shift();
     variations.push({ title: data.title, description: data.description });
     variationIndex = variations.length - 1;
-    generatedData = data;
+    generatedData = { title: data.title, description: data.description };
     renderCurrentVariation();
     applyBtn.disabled = false;
     editBtn.disabled = editable;
+    if (data.costEstimate) {
+      costRow.textContent = data.costEstimate;
+      costRow.classList.remove('prp-hidden');
+    } else {
+      costRow.classList.add('prp-hidden');
+    }
   }
 
   const handles: PreviewHandles = {
@@ -900,6 +969,51 @@ async function openSettingsModal() {
     if (endpointSelect.value === 'custom') baseUrlInput.focus();
   });
 
+  // Redact patterns
+  const redactGroup = el('div', { class: 'prp-form-group' });
+  redactGroup.appendChild(el('label', { class: 'prp-label' }, ['Diff Redaction']));
+  const tagWrapper = el('div', { class: 'prp-tag-wrapper' }) as HTMLDivElement;
+  const tagAddRow = el('div', { class: 'prp-tag-add-row' });
+  const tagInput = el('input', { class: 'prp-tag-input', type: 'text', placeholder: 'e.g. secrets/**, *.pem', autocomplete: 'off', spellcheck: 'false' }) as HTMLInputElement;
+  const tagAddBtn = el('button', { type: 'button', class: 'prp-tag-btn' }, ['Add']) as HTMLButtonElement;
+  const tagRecommBtn = el('button', { type: 'button', class: 'prp-tag-btn' }, ['Recommended']) as HTMLButtonElement;
+  tagAddRow.appendChild(tagInput);
+  tagAddRow.appendChild(tagAddBtn);
+  tagAddRow.appendChild(tagRecommBtn);
+  redactGroup.appendChild(tagWrapper);
+  redactGroup.appendChild(tagAddRow);
+  redactGroup.appendChild(el('div', { class: 'prp-hint' }, ['Files matching these patterns are redacted before the diff is sent.']));
+  body.appendChild(redactGroup);
+
+  const RECOMMENDED = ['.env*', 'secrets/**', '*.pem', '*.key', '*.cert'];
+  let localPatterns: string[] = [...settings.redactPatterns];
+
+  function renderLocalTags() {
+    tagWrapper.textContent = '';
+    for (const p of localPatterns) {
+      const chip = el('span', { class: 'prp-tag' }, [p]);
+      const removeBtn = el('button', { type: 'button', class: 'prp-tag-remove' }, ['×']) as HTMLButtonElement;
+      removeBtn.addEventListener('click', () => {
+        localPatterns = localPatterns.filter(x => x !== p);
+        renderLocalTags();
+      });
+      chip.appendChild(removeBtn);
+      tagWrapper.appendChild(chip);
+    }
+  }
+
+  function addLocalPattern(p: string) {
+    const trimmed = p.trim();
+    if (!trimmed || localPatterns.includes(trimmed)) return;
+    localPatterns.push(trimmed);
+    renderLocalTags();
+  }
+
+  tagAddBtn.addEventListener('click', () => { addLocalPattern(tagInput.value); tagInput.value = ''; tagInput.focus(); });
+  tagInput.addEventListener('keydown', (e) => { if (e.key === 'Enter') { e.preventDefault(); addLocalPattern(tagInput.value); tagInput.value = ''; } });
+  tagRecommBtn.addEventListener('click', () => { RECOMMENDED.forEach(addLocalPattern); });
+  renderLocalTags();
+
   const saveBtn = el('button', { class: 'prp-save-btn', id: 'prp-save-btn' }, ['Save Settings']);
   body.appendChild(saveBtn);
 
@@ -951,12 +1065,14 @@ async function openSettingsModal() {
           model,
         },
       },
+      redactPatterns: localPatterns,
     };
 
     try {
       await saveSettings(updated);
       settings.provider = updated.provider;
       settings.providers = updated.providers;
+      settings.redactPatterns = updated.redactPatterns;
       saveBtn.textContent = 'Saved!';
       setTimeout(closeSettingsModal, 1000);
     } catch {

@@ -1,5 +1,6 @@
 import { deobfuscateApiKey, loadSettings, type StoredSettings } from './utils';
 import { getProvider, type ProviderSettings } from './providers';
+import { estimateCost } from './costs';
 
 const MAX_LINES_PER_FILE = 100;
 const MAX_COMMITS_LENGTH = 50;
@@ -39,6 +40,8 @@ chrome.runtime.onMessage.addListener((request: GenerateRequest, _sender, sendRes
 async function handleGeneratePR(request: GenerateRequest) {
   const { commits, prUrl, extraContext, userDraft, useCachedDiff } = request;
 
+  const settings = await loadSettings();
+
   let cleanedDiff: string;
   if (useCachedDiff && diffCache.has(prUrl)) {
     cleanedDiff = diffCache.get(prUrl)!;
@@ -49,7 +52,7 @@ async function handleGeneratePR(request: GenerateRequest) {
       throw new Error('Failed to fetch PR diff. Make sure the PR URL is accessible.');
     }
     const fullDiff = await diffResponse.text();
-    cleanedDiff = cleanGitDiff(filterDiff(fullDiff));
+    cleanedDiff = cleanGitDiff(filterDiff(fullDiff, settings.redactPatterns));
     diffCache.set(prUrl, cleanedDiff);
   }
 
@@ -57,7 +60,6 @@ async function handleGeneratePR(request: GenerateRequest) {
     fetchRepoTemplate(prUrl),
     fetchLinkedIssues(prUrl, commits, cleanedDiff),
   ]);
-  const settings = await loadSettings();
   return await generate(commits, cleanedDiff, settings, { extraContext, userDraft, template, issues });
 }
 
@@ -83,7 +85,40 @@ function cleanGitDiff(text: string) {
   return cleaned.trim();
 }
 
-function filterDiff(diff: string): string {
+function globToRegex(pattern: string): RegExp {
+  let src = '^';
+  let i = 0;
+  while (i < pattern.length) {
+    if (pattern[i] === '*' && pattern[i + 1] === '*') {
+      src += '.*';
+      i += 2;
+      if (pattern[i] === '/') i++; // consume trailing slash after **
+    } else if (pattern[i] === '*') {
+      src += '[^/]*';
+      i++;
+    } else if (pattern[i] === '?') {
+      src += '[^/]';
+      i++;
+    } else {
+      src += pattern[i].replace(/[.+^${}()|[\]\\]/g, '\\$&');
+      i++;
+    }
+  }
+  src += '$';
+  return new RegExp(src);
+}
+
+function matchesRedactPattern(filename: string, patterns: string[]): boolean {
+  return patterns.some((p) => {
+    try {
+      return globToRegex(p).test(filename);
+    } catch {
+      return false;
+    }
+  });
+}
+
+function filterDiff(diff: string, redactPatterns: string[] = []): string {
   const IGNORED_FILES = ['package-lock.json', 'yarn.lock', 'pnpm-lock.yaml', '.env'];
 
   const files = diff.split('diff --git ');
@@ -96,6 +131,10 @@ function filterDiff(diff: string): string {
 
     if (IGNORED_FILES.some(ignored => filename.includes(ignored))) {
       return `(Skipped ${filename})`;
+    }
+
+    if (redactPatterns.length > 0 && matchesRedactPattern(filename, redactPatterns)) {
+      return `(Redacted: ${filename})`;
     }
 
     const lines = fileChunk.split('\n');
@@ -252,7 +291,13 @@ async function generate(commits: string[], diff: string, settings: StoredSetting
   };
 
   const prompt = constructPrompt(commits, diff, extras);
-  return provider.generate(prompt, providerSettings);
+  const result = await provider.generate(prompt, providerSettings);
+  return {
+    ...result,
+    costEstimate: result.usage
+      ? estimateCost(result.usage, settings.provider, providerSettings.model)
+      : undefined,
+  };
 }
 
 function constructPrompt(commits: string[], diff: string, extras: PromptExtras): string {

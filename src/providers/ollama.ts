@@ -41,6 +41,13 @@ export const ollamaProvider: Provider = {
     const data = await response.json();
     const text = data.response;
     if (!text) throw new Error('Invalid response structure from Ollama.');
-    return parseJsonResponse(text);
+    const parsed = parseJsonResponse(text);
+    if (data.prompt_eval_count != null || data.eval_count != null) {
+      parsed.usage = {
+        inputTokens: data.prompt_eval_count ?? 0,
+        outputTokens: data.eval_count ?? 0,
+      };
+    }
+    return parsed;
   },
 };
