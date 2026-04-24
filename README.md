@@ -6,6 +6,8 @@
   </p>
 </div>
 
+![PR-Please demo](demo.gif)
+
 ## Features
 
 - **AI-powered PR generation** — Analyzes commits and code diffs to produce Conventional Commit titles and structured PR descriptions.
@@ -27,6 +29,17 @@
 
 ## Installation
 
+### From a release (recommended)
+
+1. Go to the [Releases](https://github.com/arifintahu/pr-please/releases) page and download the latest `pr-please-vX.X.X.zip`.
+2. Unzip the file to a folder on your machine.
+3. Open `chrome://extensions/` (Chrome) or `edge://extensions/` (Edge).
+4. Enable **Developer mode** (top-right toggle).
+5. Click **Load unpacked** and select the unzipped folder.
+6. The PR-Please icon appears in your toolbar — click it to start setup.
+
+### From source
+
 ```bash
 git clone https://github.com/arifintahu/pr-please.git
 cd pr-please
@@ -34,17 +47,19 @@ npm install
 npm run build
 ```
 
-Then load in Chrome:
-1. Open `chrome://extensions/`
-2. Enable **Developer mode** (top-right toggle).
-3. Click **Load unpacked**.
-4. Select the `dist` folder.
+Then follow steps 3–6 above, selecting the `dist` folder in step 5.
 
-## Configuration
+## Setup
 
-Click the **PR-Please** extension icon in the toolbar. On first run, an onboarding wizard walks you through picking a provider and pasting your key.
+Click the **PR-Please** icon in the toolbar. On first run, an onboarding wizard walks you through:
 
-Supported providers and where to get a key:
+1. **Pick a provider** — Gemini, OpenAI, Anthropic, or Ollama (local).
+2. **Paste your API key** — obtained from the provider's console (see table below). Ollama needs no key.
+3. **Done** — you're ready to generate on any GitHub PR page.
+
+
+
+Supported providers:
 
 | Provider | Get a key | Default model |
 | --- | --- | --- |

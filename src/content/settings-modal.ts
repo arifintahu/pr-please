@@ -12,6 +12,7 @@ import { icon } from './icons';
 type EndpointChoice = 'default' | 'custom';
 
 const SAVED_CLOSE_DELAY_MS = 1000;
+const CUSTOM_MODEL_VALUE = '__custom__';
 const RECOMMENDED = ['.env*', 'secrets/**', '*.pem', '*.key', '*.cert'];
 
 interface SettingsElements {
@@ -22,6 +23,8 @@ interface SettingsElements {
   customUrlGroup: HTMLDivElement;
   baseUrlInput: HTMLInputElement;
   modelSelect: HTMLSelectElement;
+  customModelGroup: HTMLDivElement;
+  customModelInput: HTMLInputElement;
   apiKeyGroup: HTMLDivElement;
   apiKeyInput: HTMLInputElement;
   tagWrapper: HTMLDivElement;
@@ -107,12 +110,35 @@ function buildEndpointGroup(): {
   return { group, select, customGroup, customInput };
 }
 
-function buildModelGroup(): { group: HTMLDivElement; select: HTMLSelectElement } {
+function buildModelGroup(): {
+  group: HTMLDivElement;
+  select: HTMLSelectElement;
+  customGroup: HTMLDivElement;
+  customInput: HTMLInputElement;
+} {
   const group = el('div', { class: 'prp-form-group' });
   group.appendChild(el('label', { class: 'prp-label', for: 'prp-model-select' }, ['Model']));
   const select = el('select', { class: 'prp-select', id: 'prp-model-select' });
   group.appendChild(select);
-  return { group, select };
+
+  const customGroup = el('div', { class: 'prp-form-group', id: 'prp-custom-model-group' });
+  customGroup.hidden = true;
+  customGroup.appendChild(
+    el('label', { class: 'prp-label', for: 'prp-custom-model' }, ['Custom Model'])
+  );
+  const customInput = el('input', {
+    class: 'prp-input',
+    id: 'prp-custom-model',
+    type: 'text',
+    placeholder: 'Enter model name',
+    autocomplete: 'off',
+    spellcheck: 'false',
+  });
+  customGroup.appendChild(customInput);
+  customGroup.appendChild(
+    el('div', { class: 'prp-hint' }, ['Exact model identifier sent to the provider.'])
+  );
+  return { group, select, customGroup, customInput };
 }
 
 function buildApiKeyGroup(): { group: HTMLDivElement; input: HTMLInputElement } {
@@ -186,6 +212,7 @@ function buildSettingsDom(): SettingsElements {
   body.appendChild(endpoint.group);
   body.appendChild(endpoint.customGroup);
   body.appendChild(model.group);
+  body.appendChild(model.customGroup);
   body.appendChild(apiKey.group);
   body.appendChild(redact.group);
   body.appendChild(saveBtn);
@@ -206,6 +233,8 @@ function buildSettingsDom(): SettingsElements {
     customUrlGroup: endpoint.customGroup,
     baseUrlInput: endpoint.customInput,
     modelSelect: model.select,
+    customModelGroup: model.customGroup,
+    customModelInput: model.customInput,
     apiKeyGroup: apiKey.group,
     apiKeyInput: apiKey.input,
     tagWrapper: redact.wrapper,
@@ -251,9 +280,23 @@ function renderForProvider(
   for (const m of provider.modelOptions) {
     elements.modelSelect.appendChild(el('option', { value: m }, [m]));
   }
-  elements.modelSelect.value = provider.modelOptions.includes(config.model)
-    ? config.model
-    : provider.defaultModel;
+  elements.modelSelect.appendChild(
+    el('option', { value: CUSTOM_MODEL_VALUE }, ['Custom…'])
+  );
+  const isKnown = provider.modelOptions.includes(config.model);
+  if (isKnown) {
+    elements.modelSelect.value = config.model;
+    elements.customModelInput.value = '';
+    elements.customModelGroup.hidden = true;
+  } else if (config.model) {
+    elements.modelSelect.value = CUSTOM_MODEL_VALUE;
+    elements.customModelInput.value = config.model;
+    elements.customModelGroup.hidden = false;
+  } else {
+    elements.modelSelect.value = provider.defaultModel;
+    elements.customModelInput.value = '';
+    elements.customModelGroup.hidden = true;
+  }
 
   elements.baseUrlInput.value = '';
   const baseUrl = config.baseUrl || provider.defaultBaseUrl;
@@ -339,7 +382,15 @@ async function handleSave(
 ) {
   const provider = PROVIDERS[providerId];
   const apiKey = elements.apiKeyInput.value.trim();
-  const model = elements.modelSelect.value;
+  const selectedModel = elements.modelSelect.value;
+  const model =
+    selectedModel === CUSTOM_MODEL_VALUE
+      ? elements.customModelInput.value.trim()
+      : selectedModel;
+  if (selectedModel === CUSTOM_MODEL_VALUE && !model) {
+    alert('Please enter a custom model name.');
+    return;
+  }
   const choice = elements.endpointSelect.value as EndpointChoice;
 
   let baseUrl: string;
@@ -403,6 +454,12 @@ export async function openSettingsModal() {
     if (!isProviderId(elements.providerSelect.value)) return;
     currentProviderId = elements.providerSelect.value;
     renderForProvider(elements, settings, currentProviderId);
+  });
+
+  elements.modelSelect.addEventListener('change', () => {
+    const isCustom = elements.modelSelect.value === CUSTOM_MODEL_VALUE;
+    elements.customModelGroup.hidden = !isCustom;
+    if (isCustom) elements.customModelInput.focus();
   });
 
   elements.endpointSelect.addEventListener('change', () => {

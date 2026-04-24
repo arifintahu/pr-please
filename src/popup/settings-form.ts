@@ -10,6 +10,7 @@ import type { PopupElements } from './elements';
 type EndpointChoice = 'default' | 'custom';
 const SAVE_RESET_DELAY_MS = 2000;
 const STATUS_DISPLAY_MS = 2500;
+const CUSTOM_MODEL_VALUE = '__custom__';
 
 function resolveEndpointChoice(baseUrl: string, defaultBaseUrl: string): EndpointChoice {
   const trimmed = (baseUrl || '').trim().replace(/\/$/, '');
@@ -30,9 +31,25 @@ function populateModelOptions(
     option.textContent = model;
     elements.modelSelect.appendChild(option);
   }
-  elements.modelSelect.value = options.includes(selectedModel)
-    ? selectedModel
-    : PROVIDERS[providerId].defaultModel;
+  const customOption = document.createElement('option');
+  customOption.value = CUSTOM_MODEL_VALUE;
+  customOption.textContent = 'Custom…';
+  elements.modelSelect.appendChild(customOption);
+
+  const isKnown = options.includes(selectedModel);
+  if (isKnown) {
+    elements.modelSelect.value = selectedModel;
+    elements.customModelInput.value = '';
+    elements.customModelGroup.hidden = true;
+  } else if (selectedModel) {
+    elements.modelSelect.value = CUSTOM_MODEL_VALUE;
+    elements.customModelInput.value = selectedModel;
+    elements.customModelGroup.hidden = false;
+  } else {
+    elements.modelSelect.value = PROVIDERS[providerId].defaultModel;
+    elements.customModelInput.value = '';
+    elements.customModelGroup.hidden = true;
+  }
 }
 
 function applyEndpointChoice(
@@ -120,11 +137,20 @@ async function handleSave(ctx: FormContext) {
   const provider = PROVIDERS[providerId];
   const apiKey = elements.apiKeyInput.value.trim();
   const baseUrl = resolveBaseUrl(elements, providerId);
-  const model = elements.modelSelect.value;
+  const selectedModel = elements.modelSelect.value;
+  const model =
+    selectedModel === CUSTOM_MODEL_VALUE
+      ? elements.customModelInput.value.trim()
+      : selectedModel;
 
   if (baseUrl === null) {
     showStatus(elements, 'Invalid Custom URL (must start with http:// or https://)', true);
     elements.customBaseUrlInput.focus();
+    return;
+  }
+  if (selectedModel === CUSTOM_MODEL_VALUE && !model) {
+    showStatus(elements, 'Please enter a custom model name', true);
+    elements.customModelInput.focus();
     return;
   }
   if (provider.requiresApiKey && !apiKey) {
@@ -169,6 +195,12 @@ export function setupSettingsForm(ctx: FormContext) {
     if (!isProviderId(elements.providerSelect.value)) return;
     ctx.setCurrentProviderId(elements.providerSelect.value);
     renderForProvider(elements, ctx.settings, elements.providerSelect.value);
+  });
+
+  elements.modelSelect.addEventListener('change', () => {
+    const isCustom = elements.modelSelect.value === CUSTOM_MODEL_VALUE;
+    elements.customModelGroup.hidden = !isCustom;
+    if (isCustom) elements.customModelInput.focus();
   });
 
   elements.apiProviderSelect.addEventListener('change', () => {
