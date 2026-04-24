@@ -414,8 +414,66 @@ interface PreviewHandles {
   setEditable: (editable: boolean) => void;
   close: () => void;
   setResult: (data: { title: string; description: string; costEstimate?: string }) => void;
-  setBusy: (busy: boolean) => void;
+  setBusy: (busy: boolean, streaming?: boolean) => void;
   setError: (msg: string | null) => void;
+  setStreamingText: (raw: string) => void;
+}
+
+function unescapePartialJsonString(s: string): string {
+  let result = '';
+  let i = 0;
+  while (i < s.length) {
+    if (s[i] === '"') break;
+    if (s[i] === '\\' && i + 1 < s.length) {
+      const next = s[i + 1];
+      if (next === 'n') { result += '\n'; i += 2; }
+      else if (next === 'r') { result += '\r'; i += 2; }
+      else if (next === 't') { result += '\t'; i += 2; }
+      else if (next === '"') { result += '"'; i += 2; }
+      else if (next === '\\') { result += '\\'; i += 2; }
+      else if (next === '/') { result += '/'; i += 2; }
+      else if (next === 'u' && i + 5 < s.length) {
+        const code = parseInt(s.slice(i + 2, i + 6), 16);
+        if (!isNaN(code)) { result += String.fromCharCode(code); i += 6; }
+        else { result += s[i]; i++; }
+      } else { result += s[i]; i++; }
+    } else {
+      result += s[i]; i++;
+    }
+  }
+  return result;
+}
+
+function extractPartialJson(raw: string): { title?: string; description?: string } | null {
+  try {
+    const p = JSON.parse(raw);
+    if (p?.title || p?.description) return { title: String(p.title || ''), description: String(p.description || '') };
+  } catch {}
+  const result: { title?: string; description?: string } = {};
+  const titleMatch = raw.match(/"title"\s*:\s*"((?:[^"\\]|\\.)*)"/);
+  if (titleMatch) result.title = unescapePartialJsonString(titleMatch[1]);
+  const descMarker = '"description"';
+  const descIdx = raw.indexOf(descMarker);
+  if (descIdx !== -1) {
+    const after = raw.slice(descIdx + descMarker.length);
+    const colonQuote = after.match(/^\s*:\s*"/);
+    if (colonQuote) result.description = unescapePartialJsonString(after.slice(colonQuote[0].length));
+  }
+  return (result.title !== undefined || result.description !== undefined) ? result : null;
+}
+
+function parseGenerationJson(raw: string): { title: string; description: string } {
+  const stripped = raw.replace(/^```(?:json)?\s*/, '').replace(/\s*```$/, '').trim();
+  let parsed: any;
+  try {
+    parsed = JSON.parse(stripped);
+  } catch {
+    const match = stripped.match(/\{[\s\S]*\}/);
+    if (!match) throw new Error('The AI returned an invalid response. Please try again.');
+    parsed = JSON.parse(match[0]);
+  }
+  if (!parsed?.title || !parsed?.description) throw new Error('The AI response is missing required fields.');
+  return { title: String(parsed.title), description: String(parsed.description) };
 }
 
 function getDraftFromPage(): { title: string; body: string } {
@@ -544,11 +602,11 @@ async function handleGenerate() {
 }
 
 async function runGeneration(preview: PreviewHandles, opts: { useCachedDiff: boolean }) {
-  preview.setBusy(true);
+  preview.setBusy(true, true);
   preview.setError(null);
 
   try {
-    if (!chrome?.runtime?.sendMessage) {
+    if (!chrome?.runtime?.connect) {
       throw new Error('Extension context invalidated. Please refresh the page.');
     }
 
@@ -556,24 +614,57 @@ async function runGeneration(preview: PreviewHandles, opts: { useCachedDiff: boo
     const extraContext = preview.extraTextarea.value.trim();
     await saveExtraContext(prUrl, extraContext);
 
-    const response = await chrome.runtime.sendMessage({
-      action: 'GENERATE_PR',
-      commits: collectCommits(),
-      prUrl,
-      extraContext,
-      userDraft: getDraftFromPage(),
-      useCachedDiff: opts.useCachedDiff,
+    await new Promise<void>((resolve, reject) => {
+      const port = chrome.runtime.connect({ name: 'prp-stream' });
+      let accumulated = '';
+      let settled = false;
+
+      function settle(fn: () => void) {
+        if (settled) return;
+        settled = true;
+        try { port.disconnect(); } catch {}
+        fn();
+      }
+
+      port.onMessage.addListener((msg: any) => {
+        if (msg.type === 'chunk') {
+          accumulated += msg.text;
+          preview.setStreamingText(accumulated);
+        } else if (msg.type === 'done') {
+          settle(() => {
+            try {
+              let title: string, description: string;
+              if (msg.title && msg.description) {
+                title = msg.title;
+                description = msg.description;
+              } else {
+                ({ title, description } = parseGenerationJson(accumulated));
+              }
+              generatedData = { title, description };
+              preview.setResult({ title, description, costEstimate: msg.costEstimate });
+              resolve();
+            } catch (e: any) { reject(e); }
+          });
+        } else if (msg.type === 'error') {
+          settle(() => reject(new Error(msg.message)));
+        }
+      });
+
+      port.onDisconnect.addListener(() => {
+        const err = chrome.runtime.lastError;
+        if (err) settle(() => reject(new Error(err.message)));
+      });
+
+      port.postMessage({
+        action: 'STREAM_PR',
+        commits: collectCommits(),
+        prUrl,
+        extraContext,
+        userDraft: getDraftFromPage(),
+        useCachedDiff: opts.useCachedDiff,
+      });
     });
 
-    if (!response) {
-      throw new Error('No response from background service worker.');
-    }
-    if (response.error) {
-      throw new Error(response.error);
-    }
-
-    generatedData = { title: response.title, description: response.description };
-    preview.setResult({ ...generatedData, costEstimate: response.costEstimate });
   } catch (err: any) {
     console.error('PR-Please generation error:', err);
     const safeMessage = (err?.message && !String(err.message).includes('<'))
@@ -716,7 +807,7 @@ function openPreviewModal(initialExtra: string): PreviewHandles {
     document.removeEventListener('keydown', onKey);
   }
 
-  function setBusy(busy: boolean) {
+  function setBusy(busy: boolean, streaming = false) {
     applyBtn.disabled = busy || !generatedData;
     regenBtn.disabled = busy;
     editBtn.disabled = busy || !generatedData;
@@ -726,10 +817,17 @@ function openPreviewModal(initialExtra: string): PreviewHandles {
       status.classList.add('info');
       status.textContent = '';
       status.appendChild(createSpinnerIcon());
-      status.appendChild(document.createTextNode(' Generating…'));
+      status.appendChild(document.createTextNode(streaming ? ' Streaming…' : ' Generating…'));
     } else {
-      status.classList.add('prp-hidden');
+      if (!status.classList.contains('error')) status.classList.add('prp-hidden');
     }
+  }
+
+  function setStreamingText(raw: string) {
+    const partial = extractPartialJson(raw);
+    if (!partial) return;
+    if (partial.title) titleInput.value = partial.title;
+    if (partial.description !== undefined) bodyTextarea.value = partial.description;
   }
 
   function setError(msg: string | null) {
@@ -790,7 +888,7 @@ function openPreviewModal(initialExtra: string): PreviewHandles {
   const handles: PreviewHandles = {
     titleInput, bodyTextarea, extraTextarea, status,
     applyBtn, regenBtn, editBtn, discardBtn, overlay,
-    setEditable, close, setResult, setBusy, setError,
+    setEditable, close, setResult, setBusy, setError, setStreamingText,
   };
 
   function onKey(e: KeyboardEvent) {

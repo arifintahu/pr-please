@@ -74,12 +74,12 @@ Enrich the diff context with issue bodies when commits/diff reference `#N`.
 ### Streaming output
 Stream the generated content into the preview modal as it arrives.
 
-- [ ] Depends on: Preview before apply
-- [ ] Use Gemini `streamGenerateContent` (SDK + REST fallback)
-- [ ] Use OpenAI/Anthropic/Ollama native streaming
-- [ ] Pass chunks from background → content via `chrome.runtime.connect` port (not `sendMessage`)
-- [ ] Render incrementally into textarea; show a subtle "streaming…" indicator
-- [ ] Handle mid-stream errors (show partial + error banner, keep modal open)
+- [x] Depends on: Preview before apply
+- [x] Use Gemini `streamGenerateContent` (SDK + REST fallback)
+- [x] Use OpenAI/Anthropic/Ollama native streaming
+- [x] Pass chunks from background → content via `chrome.runtime.connect` port (not `sendMessage`)
+- [x] Render incrementally into textarea; show a subtle "streaming…" indicator
+- [x] Handle mid-stream errors (show partial + error banner, keep modal open)
 
 ### Regenerate with variations
 Keep the last few generations available for comparison.

@@ -25,6 +25,7 @@ export interface Provider {
   modelOptions: string[];
   requiresApiKey: boolean;
   generate(prompt: string, settings: ProviderSettings): Promise<GenerationResult>;
+  stream?(prompt: string, settings: ProviderSettings, onChunk: (text: string) => void): Promise<TokenUsage | undefined>;
 }
 
 export function parseJsonResponse(raw: string): GenerationResult {
@@ -49,4 +50,31 @@ export function parseJsonResponse(raw: string): GenerationResult {
 
 export function trimBaseUrl(url: string): string {
   return url.endsWith('/') ? url.slice(0, -1) : url;
+}
+
+export async function* readLines(body: ReadableStream<Uint8Array>): AsyncGenerator<string> {
+  const reader = body.getReader();
+  const decoder = new TextDecoder();
+  let buffer = '';
+  try {
+    while (true) {
+      const { done, value } = await reader.read();
+      if (done) {
+        if (buffer) yield buffer;
+        break;
+      }
+      buffer += decoder.decode(value, { stream: true });
+      const lines = buffer.split('\n');
+      buffer = lines.pop() ?? '';
+      for (const line of lines) yield line;
+    }
+  } finally {
+    reader.releaseLock();
+  }
+}
+
+export async function* readSseLines(body: ReadableStream<Uint8Array>): AsyncGenerator<string> {
+  for await (const line of readLines(body)) {
+    if (line.trim()) yield line;
+  }
 }

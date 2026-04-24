@@ -37,6 +37,71 @@ chrome.runtime.onMessage.addListener((request: GenerateRequest, _sender, sendRes
   }
 });
 
+interface StreamRequest {
+  action: 'STREAM_PR';
+  commits: string[];
+  prUrl: string;
+  extraContext?: string;
+  userDraft?: UserDraft;
+  useCachedDiff?: boolean;
+}
+
+chrome.runtime.onConnect.addListener((port) => {
+  if (port.name !== 'prp-stream') return;
+  let disconnected = false;
+  port.onDisconnect.addListener(() => { disconnected = true; });
+
+  port.onMessage.addListener((msg: StreamRequest) => {
+    if (msg.action !== 'STREAM_PR') return;
+    handleStreamPR(msg, (m) => {
+      if (!disconnected) { try { port.postMessage(m); } catch { disconnected = true; } }
+    }).catch((err: Error) => {
+      if (!disconnected) { try { port.postMessage({ type: 'error', message: err.message }); } catch {} }
+    });
+  });
+});
+
+async function handleStreamPR(request: StreamRequest, send: (msg: object) => void) {
+  const { commits, prUrl, extraContext, userDraft, useCachedDiff } = request;
+  const settings = await loadSettings();
+
+  let cleanedDiff: string;
+  if (useCachedDiff && diffCache.has(prUrl)) {
+    cleanedDiff = diffCache.get(prUrl)!;
+  } else {
+    const diffUrl = prUrl.endsWith('.diff') ? prUrl : `${prUrl}.diff`;
+    const diffResponse = await fetch(diffUrl);
+    if (!diffResponse.ok) throw new Error('Failed to fetch PR diff. Make sure the PR URL is accessible.');
+    const fullDiff = await diffResponse.text();
+    cleanedDiff = cleanGitDiff(filterDiff(fullDiff, settings.redactPatterns));
+    diffCache.set(prUrl, cleanedDiff);
+  }
+
+  const [template, issues] = await Promise.all([
+    fetchRepoTemplate(prUrl),
+    fetchLinkedIssues(prUrl, commits, cleanedDiff),
+  ]);
+
+  const provider = getProvider(settings.provider);
+  const config = settings.providers[settings.provider];
+  const providerSettings: ProviderSettings = {
+    apiKey: config.apiKeyEncoded ? deobfuscateApiKey(config.apiKeyEncoded) : '',
+    baseUrl: config.baseUrl || provider.defaultBaseUrl,
+    model: config.model || provider.defaultModel,
+  };
+  const prompt = constructPrompt(commits, cleanedDiff, { extraContext, userDraft, template, issues });
+
+  if (provider.stream) {
+    const usage = await provider.stream(prompt, providerSettings, (text) => send({ type: 'chunk', text }));
+    const costEstimate = usage ? estimateCost(usage, settings.provider, providerSettings.model) : undefined;
+    send({ type: 'done', costEstimate });
+  } else {
+    const result = await provider.generate(prompt, providerSettings);
+    const costEstimate = result.usage ? estimateCost(result.usage, settings.provider, providerSettings.model) : undefined;
+    send({ type: 'done', title: result.title, description: result.description, costEstimate });
+  }
+}
+
 chrome.commands.onCommand.addListener(async (command) => {
   if (command !== 'trigger-generate') return;
   const [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
