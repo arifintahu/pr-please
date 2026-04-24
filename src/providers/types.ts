@@ -59,6 +59,14 @@ export function trimBaseUrl(url: string): string {
   return url.endsWith('/') ? url.slice(0, -1) : url;
 }
 
+export function formatHttpError(provider: string, status: number, body: string): Error {
+  const trimmed = body.trim();
+  const detail = trimmed
+    ? trimmed.substring(0, 300)
+    : `No response body. Check that the base URL and API key match the proxy's auth scheme.`;
+  return new Error(`${provider} error (${status}): ${detail}`);
+}
+
 export function requireBody(body: ReadableStream<Uint8Array> | null): ReadableStream<Uint8Array> {
   if (!body) throw new Error('Response body is empty.');
   return body;

@@ -1,5 +1,6 @@
 import { GoogleGenerativeAI } from '@google/generative-ai';
 import {
+  formatHttpError,
   parseJsonResponse,
   readSseLines,
   requireBody,
@@ -8,6 +9,14 @@ import {
   type ProviderSettings,
   type TokenUsage,
 } from './types';
+
+function geminiHeaders(apiKey: string): Record<string, string> {
+  return {
+    'Content-Type': 'application/json',
+    'x-goog-api-key': apiKey,
+    Authorization: `Bearer ${apiKey}`,
+  };
+}
 
 interface GeminiUsageMetadata {
   promptTokenCount?: number;
@@ -69,7 +78,7 @@ export const geminiProvider: Provider = {
     const url = `${trimBaseUrl(settings.baseUrl)}/v1beta/models/${settings.model}:generateContent?key=${encodeURIComponent(settings.apiKey)}`;
     const response = await fetch(url, {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
+      headers: geminiHeaders(settings.apiKey),
       body: JSON.stringify({
         contents: [{ role: 'user', parts: [{ text: prompt }] }],
         generationConfig: { responseMimeType: 'application/json' },
@@ -77,8 +86,7 @@ export const geminiProvider: Provider = {
     });
 
     if (!response.ok) {
-      const errText = await response.text();
-      throw new Error(`Gemini error (${response.status}): ${errText.substring(0, 200)}`);
+      throw formatHttpError('Gemini', response.status, await response.text());
     }
     const data = await response.json();
     const text = data.candidates?.[0]?.content?.parts?.[0]?.text;
@@ -113,13 +121,12 @@ export const geminiProvider: Provider = {
     const url = `${trimBaseUrl(settings.baseUrl)}/v1beta/models/${settings.model}:streamGenerateContent?key=${encodeURIComponent(settings.apiKey)}&alt=sse`;
     const response = await fetch(url, {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
+      headers: geminiHeaders(settings.apiKey),
       body: JSON.stringify({ contents: [{ role: 'user', parts: [{ text: prompt }] }] }),
     });
 
     if (!response.ok) {
-      const errText = await response.text();
-      throw new Error(`Gemini error (${response.status}): ${errText.substring(0, 200)}`);
+      throw formatHttpError('Gemini', response.status, await response.text());
     }
 
     let usage: TokenUsage | undefined;

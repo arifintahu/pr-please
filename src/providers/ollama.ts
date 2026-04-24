@@ -1,4 +1,5 @@
 import {
+  formatHttpError,
   parseJsonResponse,
   readLines,
   requireBody,
@@ -43,8 +44,7 @@ export const ollamaProvider: Provider = {
     });
 
     if (!response.ok) {
-      const errText = await response.text();
-      throw new Error(`Ollama error (${response.status}): ${errText.substring(0, 200)}`);
+      throw formatHttpError('Ollama', response.status, await response.text());
     }
     const data = await response.json();
     const text = data.response;
@@ -72,8 +72,7 @@ export const ollamaProvider: Provider = {
     });
 
     if (!response.ok) {
-      const errText = await response.text();
-      throw new Error(`Ollama error (${response.status}): ${errText.substring(0, 200)}`);
+      throw formatHttpError('Ollama', response.status, await response.text());
     }
 
     let usage: TokenUsage | undefined;

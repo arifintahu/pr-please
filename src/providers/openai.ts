@@ -1,4 +1,5 @@
 import {
+  formatHttpError,
   parseJsonResponse,
   readSseLines,
   requireBody,
@@ -42,8 +43,7 @@ export const openaiProvider: Provider = {
     });
 
     if (!response.ok) {
-      const errText = await response.text();
-      throw new Error(`OpenAI error (${response.status}): ${errText.substring(0, 200)}`);
+      throw formatHttpError('OpenAI', response.status, await response.text());
     }
     const data = await response.json();
     const text = data.choices?.[0]?.message?.content;
@@ -84,8 +84,7 @@ export const openaiProvider: Provider = {
     });
 
     if (!response.ok) {
-      const errText = await response.text();
-      throw new Error(`OpenAI error (${response.status}): ${errText.substring(0, 200)}`);
+      throw formatHttpError('OpenAI', response.status, await response.text());
     }
 
     let usage: TokenUsage | undefined;

@@ -1,4 +1,5 @@
 import {
+  formatHttpError,
   parseJsonResponse,
   readSseLines,
   requireBody,
@@ -52,8 +53,7 @@ export const anthropicProvider: Provider = {
     });
 
     if (!response.ok) {
-      const errText = await response.text();
-      throw new Error(`Anthropic error (${response.status}): ${errText.substring(0, 200)}`);
+      throw formatHttpError('Anthropic', response.status, await response.text());
     }
     const data = await response.json();
     const text = data.content?.[0]?.text;
@@ -96,8 +96,7 @@ export const anthropicProvider: Provider = {
     });
 
     if (!response.ok) {
-      const errText = await response.text();
-      throw new Error(`Anthropic error (${response.status}): ${errText.substring(0, 200)}`);
+      throw formatHttpError('Anthropic', response.status, await response.text());
     }
 
     let usage: TokenUsage | undefined;
