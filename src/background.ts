@@ -2,9 +2,9 @@ import { deobfuscateApiKey, loadSettings, type StoredSettings } from './utils';
 import { getProvider, type ProviderSettings } from './providers';
 import { estimateCost } from './costs';
 
-const MAX_LINES_PER_FILE = 100;
+const MAX_LINES_PER_FILE = 500;
 const MAX_COMMITS_LENGTH = 50;
-const MAX_DIFF_LENGTH = 30000;
+const MAX_DIFF_LENGTH = 50000;
 const MAX_TEMPLATE_LENGTH = 4000;
 const MAX_EXTRA_CONTEXT_LENGTH = 1000;
 const MAX_USER_DRAFT_LENGTH = 2000;
