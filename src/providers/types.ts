@@ -59,6 +59,11 @@ export function trimBaseUrl(url: string): string {
   return url.endsWith('/') ? url.slice(0, -1) : url;
 }
 
+export function requireBody(body: ReadableStream<Uint8Array> | null): ReadableStream<Uint8Array> {
+  if (!body) throw new Error('Response body is empty.');
+  return body;
+}
+
 export async function* readLines(body: ReadableStream<Uint8Array>): AsyncGenerator<string> {
   const reader = body.getReader();
   const decoder = new TextDecoder();

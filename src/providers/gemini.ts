@@ -2,11 +2,29 @@ import { GoogleGenerativeAI } from '@google/generative-ai';
 import {
   parseJsonResponse,
   readSseLines,
+  requireBody,
   trimBaseUrl,
   type Provider,
   type ProviderSettings,
   type TokenUsage,
 } from './types';
+
+interface GeminiUsageMetadata {
+  promptTokenCount?: number;
+  candidatesTokenCount?: number;
+}
+
+function extractUsage(meta: GeminiUsageMetadata | undefined): TokenUsage | undefined {
+  if (!meta) return undefined;
+  return {
+    inputTokens: meta.promptTokenCount ?? 0,
+    outputTokens: meta.candidatesTokenCount ?? 0,
+  };
+}
+
+// The SDK's GenerationConfig type does not include responseMimeType in this version,
+// but the feature is supported at the REST layer.
+type GeminiGenerationConfig = Record<string, unknown>;
 
 export const GEMINI_DEFAULT_BASE_URL = 'https://generativelanguage.googleapis.com';
 export const GEMINI_DEFAULT_MODEL = 'gemini-2.5-flash';
@@ -35,20 +53,16 @@ export const geminiProvider: Provider = {
 
     if (!settings.baseUrl || settings.baseUrl === GEMINI_DEFAULT_BASE_URL) {
       const genAI = new GoogleGenerativeAI(settings.apiKey);
+      const generationConfig: GeminiGenerationConfig = { responseMimeType: 'application/json' };
       const jsonModel = genAI.getGenerativeModel({
         model: settings.model,
-        generationConfig: { responseMimeType: 'application/json' } as any,
+        generationConfig,
       });
       const result = await jsonModel.generateContent(prompt);
       const resp = await result.response;
       const parsed = parseJsonResponse(resp.text());
-      const meta = (resp as any).usageMetadata;
-      if (meta) {
-        parsed.usage = {
-          inputTokens: meta.promptTokenCount ?? 0,
-          outputTokens: meta.candidatesTokenCount ?? 0,
-        };
-      }
+      const meta = (resp as { usageMetadata?: GeminiUsageMetadata }).usageMetadata;
+      parsed.usage = extractUsage(meta);
       return parsed;
     }
 
@@ -70,13 +84,7 @@ export const geminiProvider: Provider = {
     const text = data.candidates?.[0]?.content?.parts?.[0]?.text;
     if (!text) throw new Error('Invalid response structure from Gemini.');
     const parsed = parseJsonResponse(text);
-    const meta = data.usageMetadata;
-    if (meta) {
-      parsed.usage = {
-        inputTokens: meta.promptTokenCount ?? 0,
-        outputTokens: meta.candidatesTokenCount ?? 0,
-      };
-    }
+    parsed.usage = extractUsage(data.usageMetadata);
     return parsed;
   },
 
@@ -98,14 +106,8 @@ export const geminiProvider: Provider = {
         if (text) onChunk(text);
       }
       const response = await result.response;
-      const meta = (response as any).usageMetadata;
-      if (meta) {
-        return {
-          inputTokens: meta.promptTokenCount ?? 0,
-          outputTokens: meta.candidatesTokenCount ?? 0,
-        };
-      }
-      return undefined;
+      const meta = (response as { usageMetadata?: GeminiUsageMetadata }).usageMetadata;
+      return extractUsage(meta);
     }
 
     const url = `${trimBaseUrl(settings.baseUrl)}/v1beta/models/${settings.model}:streamGenerateContent?key=${encodeURIComponent(settings.apiKey)}&alt=sse`;
@@ -121,17 +123,12 @@ export const geminiProvider: Provider = {
     }
 
     let usage: TokenUsage | undefined;
-    for await (const line of readSseLines(response.body!)) {
+    for await (const line of readSseLines(requireBody(response.body))) {
       if (!line.startsWith('data: ')) continue;
       const data = JSON.parse(line.slice(6));
       const text = data.candidates?.[0]?.content?.parts?.[0]?.text;
       if (text) onChunk(text);
-      if (data.usageMetadata) {
-        usage = {
-          inputTokens: data.usageMetadata.promptTokenCount ?? 0,
-          outputTokens: data.usageMetadata.candidatesTokenCount ?? 0,
-        };
-      }
+      if (data.usageMetadata) usage = extractUsage(data.usageMetadata);
     }
     return usage;
   },

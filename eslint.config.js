@@ -52,6 +52,9 @@ export default [
       'no-var': 'error',
       'eqeqeq': ['error', 'always', { null: 'ignore' }],
       'no-throw-literal': 'error',
+
+      // TypeScript checks identifier resolution; no-undef doesn't understand DOM lib types.
+      'no-undef': 'off',
     },
   },
   {

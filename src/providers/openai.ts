@@ -1,6 +1,7 @@
 import {
   parseJsonResponse,
   readSseLines,
+  requireBody,
   trimBaseUrl,
   type Provider,
   type ProviderSettings,
@@ -88,7 +89,7 @@ export const openaiProvider: Provider = {
     }
 
     let usage: TokenUsage | undefined;
-    for await (const line of readSseLines(response.body!)) {
+    for await (const line of readSseLines(requireBody(response.body))) {
       if (!line.startsWith('data: ')) continue;
       const payload = line.slice(6).trim();
       if (payload === '[DONE]') break;

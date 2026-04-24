@@ -1,6 +1,7 @@
 import {
   parseJsonResponse,
   readLines,
+  requireBody,
   trimBaseUrl,
   type Provider,
   type ProviderSettings,
@@ -76,7 +77,7 @@ export const ollamaProvider: Provider = {
     }
 
     let usage: TokenUsage | undefined;
-    for await (const line of readLines(response.body!)) {
+    for await (const line of readLines(requireBody(response.body))) {
       if (!line.trim()) continue;
       const data = JSON.parse(line);
       if (data.response) onChunk(data.response);

@@ -1,6 +1,7 @@
 import {
   parseJsonResponse,
   readSseLines,
+  requireBody,
   trimBaseUrl,
   type Provider,
   type ProviderSettings,
@@ -100,7 +101,7 @@ export const anthropicProvider: Provider = {
     }
 
     let usage: TokenUsage | undefined;
-    for await (const line of readSseLines(response.body!)) {
+    for await (const line of readSseLines(requireBody(response.body))) {
       if (!line.startsWith('data: ')) continue;
       const data = JSON.parse(line.slice(6));
       if (data.type === 'content_block_delta' && data.delta?.type === 'text_delta') {

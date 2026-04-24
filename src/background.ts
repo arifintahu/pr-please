@@ -77,18 +77,7 @@ async function handleStreamPR(request: StreamRequest, send: (msg: object) => voi
   const { commits, prUrl, extraContext, userDraft, useCachedDiff } = request;
   const settings = await loadSettings();
 
-  let cleanedDiff: string;
-  if (useCachedDiff && diffCache.has(prUrl)) {
-    cleanedDiff = diffCache.get(prUrl)!;
-  } else {
-    const diffUrl = prUrl.endsWith('.diff') ? prUrl : `${prUrl}.diff`;
-    const diffResponse = await fetch(diffUrl);
-    if (!diffResponse.ok)
-      throw new Error('Failed to fetch PR diff. Make sure the PR URL is accessible.');
-    const fullDiff = await diffResponse.text();
-    cleanedDiff = cleanGitDiff(filterDiff(fullDiff, settings.redactPatterns));
-    diffCache.set(prUrl, cleanedDiff);
-  }
+  const cleanedDiff = await loadCleanedDiff(prUrl, settings.redactPatterns, useCachedDiff);
 
   const [template, issues] = await Promise.all([
     fetchRepoTemplate(prUrl),
@@ -137,20 +126,7 @@ async function handleGeneratePR(request: GenerateRequest) {
   const { commits, prUrl, extraContext, userDraft, useCachedDiff } = request;
 
   const settings = await loadSettings();
-
-  let cleanedDiff: string;
-  if (useCachedDiff && diffCache.has(prUrl)) {
-    cleanedDiff = diffCache.get(prUrl)!;
-  } else {
-    const diffUrl = prUrl.endsWith('.diff') ? prUrl : `${prUrl}.diff`;
-    const diffResponse = await fetch(diffUrl);
-    if (!diffResponse.ok) {
-      throw new Error('Failed to fetch PR diff. Make sure the PR URL is accessible.');
-    }
-    const fullDiff = await diffResponse.text();
-    cleanedDiff = cleanGitDiff(filterDiff(fullDiff, settings.redactPatterns));
-    diffCache.set(prUrl, cleanedDiff);
-  }
+  const cleanedDiff = await loadCleanedDiff(prUrl, settings.redactPatterns, useCachedDiff);
 
   const [template, issues] = await Promise.all([
     fetchRepoTemplate(prUrl),
@@ -164,13 +140,36 @@ async function handleGeneratePR(request: GenerateRequest) {
   });
 }
 
+async function loadCleanedDiff(
+  prUrl: string,
+  redactPatterns: string[],
+  useCachedDiff: boolean | undefined
+): Promise<string> {
+  if (useCachedDiff) {
+    const cached = diffCache.get(prUrl);
+    if (cached !== undefined) return cached;
+  }
+  const diffUrl = prUrl.endsWith('.diff') ? prUrl : `${prUrl}.diff`;
+  const diffResponse = await fetch(diffUrl);
+  if (!diffResponse.ok) {
+    throw new Error('Failed to fetch PR diff. Make sure the PR URL is accessible.');
+  }
+  const fullDiff = await diffResponse.text();
+  const cleaned = cleanGitDiff(filterDiff(fullDiff, redactPatterns));
+  diffCache.set(prUrl, cleaned);
+  return cleaned;
+}
+
 const cleaningPatterns = {
   gitHeaders: /^(diff --git |index |--- |(\+\+\+ )).*$/gm,
   lineNumbers: /^@@.*@@.*$/gm,
   truncations: /^\.\.\. \(truncated \d+ lines\).*$/gm,
-  diffMarkers: /^([+\-])/gm,
-  fileMetadata:
-    /^(new file mode|deleted file mode|similarity index|rename from|rename to|copy from|copy to).*$/gm,
+  diffMarkers: /^[+-]/gm,
+  fileMetadata: new RegExp(
+    '^(new file mode|deleted file mode|similarity index|' +
+      'rename from|rename to|copy from|copy to).*$',
+    'gm'
+  ),
   excessiveNewlines: /\n{3,}/g,
   lineWhitespace: /^[ \t]+|[ \t]+$/gm,
 };
@@ -414,41 +413,7 @@ async function generate(
   };
 }
 
-function constructPrompt(commits: string[], diff: string, extras: PromptExtras): string {
-  const sections: string[] = [];
-
-  if (extras.template) {
-    sections.push(
-      `Repo template to fill:\nThe repository provides the PR template below. Populate it using information derived from the commits and diff. Preserve its section order, headings, checklist items, and any HTML comments. Use this instead of your own default structure.\n\n<<<TEMPLATE\n${extras.template.slice(0, MAX_TEMPLATE_LENGTH)}\nTEMPLATE`
-    );
-  }
-
-  const userDraft = extras.userDraft;
-  const draftTitle = userDraft?.title?.trim() || '';
-  const draftBody = userDraft?.body?.trim() || '';
-  if (draftTitle || draftBody) {
-    const parts: string[] = [
-      'User has already written the following — refine and expand, do not discard their intent:',
-    ];
-    if (draftTitle) parts.push(`Draft title:\n${draftTitle.slice(0, MAX_USER_DRAFT_LENGTH)}`);
-    if (draftBody) parts.push(`Draft body:\n${draftBody.slice(0, MAX_USER_DRAFT_LENGTH)}`);
-    sections.push(parts.join('\n\n'));
-  }
-
-  const extra = extras.extraContext?.trim();
-  if (extra) {
-    sections.push(`User guidance:\n${extra.slice(0, MAX_EXTRA_CONTEXT_LENGTH)}`);
-  }
-
-  const issues = extras.issues || [];
-  if (issues.length > 0) {
-    const rendered = issues.map((i) => `#${i.number} — ${i.title}\n${i.body}`).join('\n\n');
-    sections.push(`Referenced issues:\n${rendered}`);
-  }
-
-  const targetStructure = extras.template
-    ? `Use the repo template above as the structure for "description". Do not use the default structure.`
-    : `Target Markdown Structure for "description":
+const DEFAULT_TARGET_STRUCTURE = `Target Markdown Structure for "description":
 ## Summary
 (Concise 1-2 sentence paragraph summarizing what changed and why)
 
@@ -481,6 +446,56 @@ function constructPrompt(commits: string[], diff: string, extras: PromptExtras):
 
 - [Issue/Ticket/Doc title](url) — brief note on relevance`;
 
+const TEMPLATE_TARGET_STRUCTURE =
+  'Use the repo template above as the structure for "description". ' +
+  'Do not use the default structure.';
+
+function templateSection(template: string): string {
+  const body = template.slice(0, MAX_TEMPLATE_LENGTH);
+  return [
+    'Repo template to fill:',
+    'The repository provides the PR template below. Populate it using information derived',
+    'from the commits and diff. Preserve its section order, headings, checklist items, and',
+    'any HTML comments. Use this instead of your own default structure.',
+    '',
+    '<<<TEMPLATE',
+    body,
+    'TEMPLATE',
+  ].join('\n');
+}
+
+function userDraftSection(draft: UserDraft | undefined): string | null {
+  const title = draft?.title?.trim() || '';
+  const body = draft?.body?.trim() || '';
+  if (!title && !body) return null;
+  const parts: string[] = [
+    'User has already written the following — refine and expand, do not discard their intent:',
+  ];
+  if (title) parts.push(`Draft title:\n${title.slice(0, MAX_USER_DRAFT_LENGTH)}`);
+  if (body) parts.push(`Draft body:\n${body.slice(0, MAX_USER_DRAFT_LENGTH)}`);
+  return parts.join('\n\n');
+}
+
+function buildPromptSections(extras: PromptExtras): string[] {
+  const sections: string[] = [];
+  if (extras.template) sections.push(templateSection(extras.template));
+  const draft = userDraftSection(extras.userDraft);
+  if (draft) sections.push(draft);
+  const extra = extras.extraContext?.trim();
+  if (extra) sections.push(`User guidance:\n${extra.slice(0, MAX_EXTRA_CONTEXT_LENGTH)}`);
+  const issues = extras.issues || [];
+  if (issues.length > 0) {
+    const rendered = issues.map((i) => `#${i.number} — ${i.title}\n${i.body}`).join('\n\n');
+    sections.push(`Referenced issues:\n${rendered}`);
+  }
+  return sections;
+}
+
+function constructPrompt(commits: string[], diff: string, extras: PromptExtras): string {
+  const sections = buildPromptSections(extras);
+  const targetStructure = extras.template ? TEMPLATE_TARGET_STRUCTURE : DEFAULT_TARGET_STRUCTURE;
+  const sectionBlock = sections.length > 0 ? sections.join('\n\n') + '\n\n' : '';
+
   return `
 You are a PR assistant. Analyze the code changes and return a JSON object with "title" and "description" fields.
 
@@ -501,7 +516,7 @@ CONTENT GENERATION RULES:
 
 - **Description**: Produce a thorough, reviewer-friendly description following the target structure below.
 
-${sections.length > 0 ? sections.join('\n\n') + '\n\n' : ''}${targetStructure}
+${sectionBlock}${targetStructure}
 
 Commits:
 ${commits.slice(0, MAX_COMMITS_LENGTH).join('\n')}
