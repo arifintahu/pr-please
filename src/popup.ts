@@ -6,6 +6,7 @@ import { setupOnboarding } from './popup/onboarding';
 import { setupSettingsForm, renderForProvider } from './popup/settings-form';
 import { setupRedactControls } from './popup/redact';
 import { setupImportExport } from './popup/import-export';
+import { setupAdvancedToggle } from './popup/advanced';
 
 async function init() {
   const elements = getPopupElements();
@@ -52,6 +53,8 @@ async function init() {
       currentProviderId = id;
     },
   });
+
+  setupAdvancedToggle(elements);
 }
 
 document.addEventListener('DOMContentLoaded', init);

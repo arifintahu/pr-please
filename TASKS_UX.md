@@ -134,16 +134,16 @@ The Save button should feel like a destination — the natural endpoint of the f
 ### Fix onboarding wizard step stacking
 Steps 1 and 2 are both visible at the same time. Each `showOnboardStep()` call must explicitly set `hidden = true` on all other step elements before revealing the target step.
 
-- [ ] In `src/popup.ts`, update `showOnboardStep()` to explicitly hide all step containers (`onboardStep1`, `onboardStep2`, `onboardStep3`, `onboardStepOllama`) before showing the target
-- [ ] Verify Ollama variant step hides correctly when navigating back to step 1
-- [ ] Verify "Skip setup" dismisses the entire onboarding overlay and shows main settings
+- [x] In `src/popup.ts`, update `showOnboardStep()` to explicitly hide all step containers (`onboardStep1`, `onboardStep2`, `onboardStep3`, `onboardStepOllama`) before showing the target
+- [x] Verify Ollama variant step hides correctly when navigating back to step 1
+- [x] Verify "Skip setup" dismisses the entire onboarding overlay and shows main settings
 
 ### Add fixed popup height to eliminate external scroll
 Chrome clips popup content past ~600px without providing scrollbars. Content below that is simply cut off. The popup must have a bounded height with internal scrolling.
 
-- [ ] Set `height: 560px` on `body` in `src/popup.css`
-- [ ] Set `overflow-y: auto; flex: 1` on `.settings-body` so internal content scrolls within the fixed window
-- [ ] Verify onboarding view also fits within 560px at each step (no external scroll)
+- [x] Set `height: 560px` on `body` in `src/popup.css`
+- [x] Set `overflow-y: auto; flex: 1` on `.settings-body` so internal content scrolls within the fixed window
+- [x] Verify onboarding view also fits within 560px at each step (no external scroll)
 
 ---
 
@@ -152,16 +152,16 @@ Chrome clips popup content past ~600px without providing scrollbars. Content bel
 ### Collapse advanced settings behind a disclosure section
 "API Endpoint" and "Custom URL" are proxy settings used by fewer than 5% of users. Showing them by default pushes the Save button below the fold.
 
-- [ ] Add a `<details>` / disclosure row labeled "Advanced" below the Model field in `src/popup.html`
-- [ ] Move "API Endpoint" select and "Custom URL" input inside the Advanced section
-- [ ] Keep collapsed by default; persist open/closed state in `chrome.storage.local`
-- [ ] Update `src/popup.ts` to read/write the collapsed state
+- [x] Add a `<details>` / disclosure row labeled "Advanced" below the Model field in `src/popup.html`
+- [x] Move "API Endpoint" select and "Custom URL" input inside the Advanced section
+- [x] Keep collapsed by default; persist open/closed state in `chrome.storage.local`
+- [x] Update `src/popup.ts` to read/write the collapsed state
 
 ### Move Diff Redaction into the Advanced section
 Diff Redaction is a power-user feature not needed during first setup or casual visits.
 
-- [ ] Relocate the Diff Redaction form group into the Advanced disclosure in `src/popup.html`
-- [ ] Ensure event wiring in `src/popup.ts` still reaches the relocated elements
+- [x] Relocate the Diff Redaction form group into the Advanced disclosure in `src/popup.html`
+- [x] Ensure event wiring in `src/popup.ts` still reaches the relocated elements
 
 ---
 
@@ -170,57 +170,57 @@ Diff Redaction is a power-user feature not needed during first setup or casual v
 ### Raise hint text from 11px to 12px
 11px is below comfortable reading threshold at standard DPI.
 
-- [ ] Change `font-size: 11px` to `font-size: 12px` in `.form-hint` and `.form-hint-plain` in `src/popup.css`
+- [x] Change `font-size: 11px` to `font-size: 12px` in `.form-hint` and `.form-hint-plain` in `src/popup.css`
 
 ### Fix divider `margin-top: auto` scoping
 The rule applies to all three dividers but `auto` is only meaningful for the first one.
 
-- [ ] Remove `margin-top: auto` from `.divider` in `src/popup.css`
-- [ ] Add `margin-top: auto` as an inline style or separate class (`.divider-push`) only to the first divider in `src/popup.html`
+- [x] Remove `margin-top: auto` from `.divider` in `src/popup.css`
+- [x] Add `margin-top: auto` as an inline style or separate class (`.divider-push`) only to the first divider in `src/popup.html`
 
 ### Reduce intro card to a compact provider indicator
 The green card consumes ~60px and is purely decorative for returning users.
 
-- [ ] Reduce `.intro` padding to `8px 12px` and remove the title/description in favor of a single `provider name — active` line with the sparkle icon
-- [ ] Change background from `--accent-green-subtle` to `--bg-tertiary` with `--border` border (neutral, not green)
+- [x] Reduce `.intro` padding to `8px 12px` and remove the title/description in favor of a single `provider name — active` line with the sparkle icon
+- [x] Change background from `--accent-green-subtle` to `--bg-tertiary` with `--border` border (neutral, not green)
 
 ### Replace OS emoji icons in onboarding with SVGs
 `🔑` on step 2 cannot be CSS-colored and renders inconsistently across OS.
 
-- [ ] Replace `🔑`, `✓`, and `✦` in `src/popup.html` onboarding steps with inline SVGs
-- [ ] Size at 28×28px, color via `fill: var(--accent-green)` or `color: var(--accent-green)`
+- [x] Replace `🔑`, `✓`, and `✦` in `src/popup.html` onboarding steps with inline SVGs
+- [x] Size at 28×28px, color via `fill: var(--accent-green)` or `color: var(--accent-green)`
 
 ---
 
 ## P3 — Component Polish
 
 ### Standardize tag chip border-radius and remove button size
-- [ ] Change `.tag-chip` `border-radius: 20px` → `var(--radius-sm)` in `src/popup.css`
-- [ ] Add `padding: 3px; min-width: 20px; min-height: 20px` to `.tag-chip-remove` for accessible hit target
-- [ ] Replace `.tag-chip` and `.tag-input` inline font stack with `var(--font-mono)`
+- [x] Change `.tag-chip` `border-radius: 20px` → `var(--radius-sm)` in `src/popup.css`
+- [x] Add `padding: 3px; min-width: 20px; min-height: 20px` to `.tag-chip-remove` for accessible hit target
+- [x] Replace `.tag-chip` and `.tag-input` inline font stack with `var(--font-mono)`
 
 ### Standardize secondary button height
 `.btn-outline` and `.btn-tag-add` have different padding and no `min-height`, so they render at different heights on the same row.
 
-- [ ] Add `min-height: 32px` to `.btn-outline` in `src/popup.css`
-- [ ] Add `min-height: 32px` to `.btn-tag-add` in `src/popup.css`
-- [ ] Change `.btn-tag-add` `border-radius: 6px` → `var(--radius-sm)`
+- [x] Add `min-height: 32px` to `.btn-outline` in `src/popup.css`
+- [x] Add `min-height: 32px` to `.btn-tag-add` in `src/popup.css`
+- [x] Change `.btn-tag-add` `border-radius: 6px` → `var(--radius-sm)`
 
 ### Add transition to `.btn-link` hover
-- [ ] Add `transition: opacity 150ms` to `.btn-link` in `src/popup.css`
+- [x] Add `transition: opacity 150ms` to `.btn-link` in `src/popup.css`
 
 ### Shorten Export / Import button labels
 "Export settings" wraps to two lines at 360px width.
 
-- [ ] Change label: "Export settings" → "Export" and "Import settings" → "Import" in `src/popup.html`
-- [ ] Add a `font-size: 11px; color: var(--text-muted)` label "Backup" above the export-import row as a section header
-- [ ] Verify the row fits on one line without wrapping
+- [x] Change label: "Export settings" → "Export" and "Import settings" → "Import" in `src/popup.html`
+- [x] Add a `font-size: 11px; color: var(--text-muted)` label "Backup" above the export-import row as a section header
+- [x] Verify the row fits on one line without wrapping
 
 ### Replace status dot with static checkmark for save confirmation
 Permanent pulsing animation is distracting for a transient confirmation state.
 
-- [ ] Replace `.status-dot` (pulsing circle) with a static SVG checkmark icon in `src/popup.html` status row
-- [ ] Keep the green color; remove the `pulse` keyframe animation for the save status row (keep it only for error dot if used)
+- [x] Replace `.status-dot` (pulsing circle) with a static SVG checkmark icon in `src/popup.html` status row
+- [x] Keep the green color; remove the `pulse` keyframe animation for the save status row (keep it only for error dot if used)
 
 ---
 

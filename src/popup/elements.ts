@@ -25,6 +25,7 @@ export interface PopupElements {
   importFile: HTMLInputElement;
   importStatusRow: HTMLDivElement;
   importStatusText: HTMLSpanElement;
+  advancedDetails: HTMLDetailsElement;
 }
 
 function byId<T extends HTMLElement>(id: string): T {
@@ -59,5 +60,6 @@ export function getPopupElements(): PopupElements {
     importFile: byId('importFile'),
     importStatusRow: byId('importStatusRow'),
     importStatusText: byId('importStatusText'),
+    advancedDetails: byId('advancedDetails'),
   };
 }
