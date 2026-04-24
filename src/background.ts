@@ -31,8 +31,8 @@ const diffCache = new Map<string, string>();
 chrome.runtime.onMessage.addListener((request: GenerateRequest, _sender, sendResponse) => {
   if (request.action === 'GENERATE_PR') {
     handleGeneratePR(request)
-      .then(response => sendResponse(response))
-      .catch(err => sendResponse({ error: err.message }));
+      .then((response) => sendResponse(response))
+      .catch((err) => sendResponse({ error: err.message }));
     return true;
   }
 });
@@ -49,14 +49,26 @@ interface StreamRequest {
 chrome.runtime.onConnect.addListener((port) => {
   if (port.name !== 'prp-stream') return;
   let disconnected = false;
-  port.onDisconnect.addListener(() => { disconnected = true; });
+  port.onDisconnect.addListener(() => {
+    disconnected = true;
+  });
 
   port.onMessage.addListener((msg: StreamRequest) => {
     if (msg.action !== 'STREAM_PR') return;
     handleStreamPR(msg, (m) => {
-      if (!disconnected) { try { port.postMessage(m); } catch { disconnected = true; } }
+      if (!disconnected) {
+        try {
+          port.postMessage(m);
+        } catch {
+          disconnected = true;
+        }
+      }
     }).catch((err: Error) => {
-      if (!disconnected) { try { port.postMessage({ type: 'error', message: err.message }); } catch {} }
+      if (!disconnected) {
+        try {
+          port.postMessage({ type: 'error', message: err.message });
+        } catch {}
+      }
     });
   });
 });
@@ -71,7 +83,8 @@ async function handleStreamPR(request: StreamRequest, send: (msg: object) => voi
   } else {
     const diffUrl = prUrl.endsWith('.diff') ? prUrl : `${prUrl}.diff`;
     const diffResponse = await fetch(diffUrl);
-    if (!diffResponse.ok) throw new Error('Failed to fetch PR diff. Make sure the PR URL is accessible.');
+    if (!diffResponse.ok)
+      throw new Error('Failed to fetch PR diff. Make sure the PR URL is accessible.');
     const fullDiff = await diffResponse.text();
     cleanedDiff = cleanGitDiff(filterDiff(fullDiff, settings.redactPatterns));
     diffCache.set(prUrl, cleanedDiff);
@@ -89,15 +102,26 @@ async function handleStreamPR(request: StreamRequest, send: (msg: object) => voi
     baseUrl: config.baseUrl || provider.defaultBaseUrl,
     model: config.model || provider.defaultModel,
   };
-  const prompt = constructPrompt(commits, cleanedDiff, { extraContext, userDraft, template, issues });
+  const prompt = constructPrompt(commits, cleanedDiff, {
+    extraContext,
+    userDraft,
+    template,
+    issues,
+  });
 
   if (provider.stream) {
-    const usage = await provider.stream(prompt, providerSettings, (text) => send({ type: 'chunk', text }));
-    const costEstimate = usage ? estimateCost(usage, settings.provider, providerSettings.model) : undefined;
+    const usage = await provider.stream(prompt, providerSettings, (text) =>
+      send({ type: 'chunk', text })
+    );
+    const costEstimate = usage
+      ? estimateCost(usage, settings.provider, providerSettings.model)
+      : undefined;
     send({ type: 'done', costEstimate });
   } else {
     const result = await provider.generate(prompt, providerSettings);
-    const costEstimate = result.usage ? estimateCost(result.usage, settings.provider, providerSettings.model) : undefined;
+    const costEstimate = result.usage
+      ? estimateCost(result.usage, settings.provider, providerSettings.model)
+      : undefined;
     send({ type: 'done', title: result.title, description: result.description, costEstimate });
   }
 }
@@ -132,7 +156,12 @@ async function handleGeneratePR(request: GenerateRequest) {
     fetchRepoTemplate(prUrl),
     fetchLinkedIssues(prUrl, commits, cleanedDiff),
   ]);
-  return await generate(commits, cleanedDiff, settings, { extraContext, userDraft, template, issues });
+  return await generate(commits, cleanedDiff, settings, {
+    extraContext,
+    userDraft,
+    template,
+    issues,
+  });
 }
 
 const cleaningPatterns = {
@@ -140,9 +169,10 @@ const cleaningPatterns = {
   lineNumbers: /^@@.*@@.*$/gm,
   truncations: /^\.\.\. \(truncated \d+ lines\).*$/gm,
   diffMarkers: /^([+\-])/gm,
-  fileMetadata: /^(new file mode|deleted file mode|similarity index|rename from|rename to|copy from|copy to).*$/gm,
+  fileMetadata:
+    /^(new file mode|deleted file mode|similarity index|rename from|rename to|copy from|copy to).*$/gm,
   excessiveNewlines: /\n{3,}/g,
-  lineWhitespace: /^[ \t]+|[ \t]+$/gm
+  lineWhitespace: /^[ \t]+|[ \t]+$/gm,
 };
 
 function cleanGitDiff(text: string) {
@@ -194,14 +224,14 @@ function filterDiff(diff: string, redactPatterns: string[] = []): string {
   const IGNORED_FILES = ['package-lock.json', 'yarn.lock', 'pnpm-lock.yaml', '.env'];
 
   const files = diff.split('diff --git ');
-  const processedFiles = files.map(fileChunk => {
+  const processedFiles = files.map((fileChunk) => {
     if (!fileChunk.trim()) return '';
 
     const firstLine = fileChunk.split('\n')[0];
     const match = firstLine.match(/a\/(.*) b\//);
     const filename = match ? match[1] : 'unknown';
 
-    if (IGNORED_FILES.some(ignored => filename.includes(ignored))) {
+    if (IGNORED_FILES.some((ignored) => filename.includes(ignored))) {
       return `(Skipped ${filename})`;
     }
 
@@ -211,7 +241,10 @@ function filterDiff(diff: string, redactPatterns: string[] = []): string {
 
     const lines = fileChunk.split('\n');
     if (lines.length > MAX_LINES_PER_FILE) {
-      return lines.slice(0, MAX_LINES_PER_FILE).join('\n') + `\n... (truncated ${lines.length - MAX_LINES_PER_FILE} lines)`;
+      return (
+        lines.slice(0, MAX_LINES_PER_FILE).join('\n') +
+        `\n... (truncated ${lines.length - MAX_LINES_PER_FILE} lines)`
+      );
     }
     return fileChunk;
   });
@@ -278,7 +311,11 @@ interface IssueCacheEntry {
   ts: number;
 }
 
-async function fetchLinkedIssues(prUrl: string, commits: string[], diff: string): Promise<LinkedIssue[]> {
+async function fetchLinkedIssues(
+  prUrl: string,
+  commits: string[],
+  diff: string
+): Promise<LinkedIssue[]> {
   const parsed = parseOwnerRepo(prUrl);
   if (!parsed) return [];
   const { owner, repo } = parsed;
@@ -353,7 +390,12 @@ interface PromptExtras {
   issues?: LinkedIssue[];
 }
 
-async function generate(commits: string[], diff: string, settings: StoredSettings, extras: PromptExtras) {
+async function generate(
+  commits: string[],
+  diff: string,
+  settings: StoredSettings,
+  extras: PromptExtras
+) {
   const provider = getProvider(settings.provider);
   const config = settings.providers[settings.provider];
   const providerSettings: ProviderSettings = {

@@ -25,11 +25,18 @@ export interface Provider {
   modelOptions: string[];
   requiresApiKey: boolean;
   generate(prompt: string, settings: ProviderSettings): Promise<GenerationResult>;
-  stream?(prompt: string, settings: ProviderSettings, onChunk: (text: string) => void): Promise<TokenUsage | undefined>;
+  stream?(
+    prompt: string,
+    settings: ProviderSettings,
+    onChunk: (text: string) => void
+  ): Promise<TokenUsage | undefined>;
 }
 
 export function parseJsonResponse(raw: string): GenerationResult {
-  const jsonText = raw.replace(/^```(?:json)?\s*/, '').replace(/\s*```$/, '').trim();
+  const jsonText = raw
+    .replace(/^```(?:json)?\s*/, '')
+    .replace(/\s*```$/, '')
+    .trim();
   let parsed;
   try {
     parsed = JSON.parse(jsonText);

@@ -37,11 +37,15 @@ function createSpinnerIcon(): SVGSVGElement {
 }
 
 const ICON_PATHS = {
-  sparkle: 'M7.53 1.282a.5.5 0 01.94 0l.478 1.306a7.492 7.492 0 004.464 4.464l1.305.478a.5.5 0 010 .94l-1.305.478a7.492 7.492 0 00-4.464 4.464l-.478 1.305a.5.5 0 01-.94 0l-.478-1.305a7.492 7.492 0 00-4.464-4.464L1.282 8.47a.5.5 0 010-.94l1.306-.478a7.492 7.492 0 004.464-4.464L7.53 1.282z',
+  sparkle:
+    'M7.53 1.282a.5.5 0 01.94 0l.478 1.306a7.492 7.492 0 004.464 4.464l1.305.478a.5.5 0 010 .94l-1.305.478a7.492 7.492 0 00-4.464 4.464l-.478 1.305a.5.5 0 01-.94 0l-.478-1.305a7.492 7.492 0 00-4.464-4.464L1.282 8.47a.5.5 0 010-.94l1.306-.478a7.492 7.492 0 004.464-4.464L7.53 1.282z',
   gear: 'M8 0a8.2 8.2 0 01.701.031C9.444.095 9.99.645 10.16 1.29l.035.133.038.146c.07.3.192.578.352.827a1.5 1.5 0 001.323.753c.257 0 .515-.072.745-.2l.13-.073.134-.079c.572-.348 1.29-.295 1.808.137a8.076 8.076 0 011.416 1.42c.425.515.477 1.225.137 1.795l-.082.14-.076.131a1.5 1.5 0 00.554 2.07c.249.16.527.282.827.352l.146.038.133.035c.646.17 1.196.716 1.26 1.459a8.2 8.2 0 010 1.402c-.064.743-.614 1.289-1.26 1.459l-.133.035-.146.038a2.88 2.88 0 00-.827.352 1.5 1.5 0 00-.554 2.07l.076.131.082.14c.34.57.288 1.28-.137 1.795a8.076 8.076 0 01-1.416 1.42c-.518.432-1.236.485-1.808.137l-.134-.079-.13-.073a1.5 1.5 0 00-2.068.553c-.16.25-.282.528-.352.828l-.038.146-.035.133c-.17.645-.716 1.195-1.459 1.259a8.2 8.2 0 01-1.402 0c-.743-.064-1.289-.614-1.459-1.26l-.035-.132-.038-.146a2.88 2.88 0 00-.352-.828 1.5 1.5 0 00-2.068-.553l-.13.073-.134.079c-.572.348-1.29.295-1.808-.137a8.076 8.076 0 01-1.416-1.42c-.425-.515-.477-1.225-.137-1.795l.082-.14.076-.131a1.5 1.5 0 00-.554-2.07 2.88 2.88 0 00-.827-.352l-.146-.038-.133-.035C.645 9.444.095 8.898.031 8.155a8.2 8.2 0 010-1.402C.095 6.01.645 5.464 1.29 5.294l.133-.035.146-.038c.3-.07.578-.192.827-.352a1.5 1.5 0 00.554-2.07l-.076-.131-.082-.14c-.34-.57-.288-1.28.137-1.795A8.076 8.076 0 014.346.333c.518-.432 1.236-.485 1.808-.137l.134.079.13.073a1.5 1.5 0 002.068-.553c.16-.25.282-.528.352-.828l.038-.146.035-.133C9.081.143 9.627-.407 10.37-.469zM8 5.5a2.5 2.5 0 100 5 2.5 2.5 0 000-5z',
-  success: 'M13.78 4.22a.75.75 0 010 1.06l-7.25 7.25a.75.75 0 01-1.06 0L2.22 9.28a.75.75 0 011.06-1.06L6 10.94l6.72-6.72a.75.75 0 011.06 0z',
-  error: 'M3.72 3.72a.75.75 0 011.06 0L8 6.94l3.22-3.22a.75.75 0 111.06 1.06L9.06 8l3.22 3.22a.75.75 0 11-1.06 1.06L8 9.06l-3.22 3.22a.75.75 0 01-1.06-1.06L6.94 8 3.72 4.78a.75.75 0 010-1.06z',
-  close: 'M3.72 3.72a.75.75 0 011.06 0L8 6.94l3.22-3.22a.75.75 0 111.06 1.06L9.06 8l3.22 3.22a.75.75 0 11-1.06 1.06L8 9.06l-3.22 3.22a.75.75 0 01-1.06-1.06L6.94 8 3.72 4.78a.75.75 0 010-1.06z',
+  success:
+    'M13.78 4.22a.75.75 0 010 1.06l-7.25 7.25a.75.75 0 01-1.06 0L2.22 9.28a.75.75 0 011.06-1.06L6 10.94l6.72-6.72a.75.75 0 011.06 0z',
+  error:
+    'M3.72 3.72a.75.75 0 011.06 0L8 6.94l3.22-3.22a.75.75 0 111.06 1.06L9.06 8l3.22 3.22a.75.75 0 11-1.06 1.06L8 9.06l-3.22 3.22a.75.75 0 01-1.06-1.06L6.94 8 3.72 4.78a.75.75 0 010-1.06z',
+  close:
+    'M3.72 3.72a.75.75 0 011.06 0L8 6.94l3.22-3.22a.75.75 0 111.06 1.06L9.06 8l3.22 3.22a.75.75 0 11-1.06 1.06L8 9.06l-3.22 3.22a.75.75 0 01-1.06-1.06L6.94 8 3.72 4.78a.75.75 0 010-1.06z',
 };
 
 const ICON_TRANSFORMS: Record<string, string> = {
@@ -397,7 +401,10 @@ document.head.appendChild(styleEl);
 let generatedData: { title: string; description: string } | null = null;
 
 const MAX_VARIATIONS = 3;
-interface Variation { title: string; description: string }
+interface Variation {
+  title: string;
+  description: string;
+}
 const variations: Variation[] = [];
 let variationIndex = -1;
 
@@ -426,19 +433,40 @@ function unescapePartialJsonString(s: string): string {
     if (s[i] === '"') break;
     if (s[i] === '\\' && i + 1 < s.length) {
       const next = s[i + 1];
-      if (next === 'n') { result += '\n'; i += 2; }
-      else if (next === 'r') { result += '\r'; i += 2; }
-      else if (next === 't') { result += '\t'; i += 2; }
-      else if (next === '"') { result += '"'; i += 2; }
-      else if (next === '\\') { result += '\\'; i += 2; }
-      else if (next === '/') { result += '/'; i += 2; }
-      else if (next === 'u' && i + 5 < s.length) {
+      if (next === 'n') {
+        result += '\n';
+        i += 2;
+      } else if (next === 'r') {
+        result += '\r';
+        i += 2;
+      } else if (next === 't') {
+        result += '\t';
+        i += 2;
+      } else if (next === '"') {
+        result += '"';
+        i += 2;
+      } else if (next === '\\') {
+        result += '\\';
+        i += 2;
+      } else if (next === '/') {
+        result += '/';
+        i += 2;
+      } else if (next === 'u' && i + 5 < s.length) {
         const code = parseInt(s.slice(i + 2, i + 6), 16);
-        if (!isNaN(code)) { result += String.fromCharCode(code); i += 6; }
-        else { result += s[i]; i++; }
-      } else { result += s[i]; i++; }
+        if (!isNaN(code)) {
+          result += String.fromCharCode(code);
+          i += 6;
+        } else {
+          result += s[i];
+          i++;
+        }
+      } else {
+        result += s[i];
+        i++;
+      }
     } else {
-      result += s[i]; i++;
+      result += s[i];
+      i++;
     }
   }
   return result;
@@ -447,7 +475,8 @@ function unescapePartialJsonString(s: string): string {
 function extractPartialJson(raw: string): { title?: string; description?: string } | null {
   try {
     const p = JSON.parse(raw);
-    if (p?.title || p?.description) return { title: String(p.title || ''), description: String(p.description || '') };
+    if (p?.title || p?.description)
+      return { title: String(p.title || ''), description: String(p.description || '') };
   } catch {}
   const result: { title?: string; description?: string } = {};
   const titleMatch = raw.match(/"title"\s*:\s*"((?:[^"\\]|\\.)*)"/);
@@ -457,13 +486,17 @@ function extractPartialJson(raw: string): { title?: string; description?: string
   if (descIdx !== -1) {
     const after = raw.slice(descIdx + descMarker.length);
     const colonQuote = after.match(/^\s*:\s*"/);
-    if (colonQuote) result.description = unescapePartialJsonString(after.slice(colonQuote[0].length));
+    if (colonQuote)
+      result.description = unescapePartialJsonString(after.slice(colonQuote[0].length));
   }
-  return (result.title !== undefined || result.description !== undefined) ? result : null;
+  return result.title !== undefined || result.description !== undefined ? result : null;
 }
 
 function parseGenerationJson(raw: string): { title: string; description: string } {
-  const stripped = raw.replace(/^```(?:json)?\s*/, '').replace(/\s*```$/, '').trim();
+  const stripped = raw
+    .replace(/^```(?:json)?\s*/, '')
+    .replace(/\s*```$/, '')
+    .trim();
   let parsed: any;
   try {
     parsed = JSON.parse(stripped);
@@ -472,13 +505,18 @@ function parseGenerationJson(raw: string): { title: string; description: string 
     if (!match) throw new Error('The AI returned an invalid response. Please try again.');
     parsed = JSON.parse(match[0]);
   }
-  if (!parsed?.title || !parsed?.description) throw new Error('The AI response is missing required fields.');
+  if (!parsed?.title || !parsed?.description)
+    throw new Error('The AI response is missing required fields.');
   return { title: String(parsed.title), description: String(parsed.description) };
 }
 
 function getDraftFromPage(): { title: string; body: string } {
-  const titleInput = document.querySelector('input[name="pull_request[title]"]') as HTMLInputElement | null;
-  const bodyInput = document.querySelector('textarea[name="pull_request[body]"]') as HTMLTextAreaElement | null;
+  const titleInput = document.querySelector(
+    'input[name="pull_request[title]"]'
+  ) as HTMLInputElement | null;
+  const bodyInput = document.querySelector(
+    'textarea[name="pull_request[body]"]'
+  ) as HTMLTextAreaElement | null;
   return {
     title: titleInput?.value ?? '',
     body: bodyInput?.value ?? '',
@@ -510,8 +548,12 @@ async function saveExtraContext(prUrl: string, value: string): Promise<void> {
 }
 
 function collectCommits(): string[] {
-  const commitElements = document.querySelectorAll('.js-commits-list-item p.mb-1 a.markdown-title, .commit-message code a');
-  return Array.from(commitElements).map(el => el.textContent?.trim()).filter(Boolean) as string[];
+  const commitElements = document.querySelectorAll(
+    '.js-commits-list-item p.mb-1 a.markdown-title, .commit-message code a'
+  );
+  return Array.from(commitElements)
+    .map((el) => el.textContent?.trim())
+    .filter(Boolean) as string[];
 }
 
 function el<K extends keyof HTMLElementTagNameMap>(
@@ -537,15 +579,22 @@ function el<K extends keyof HTMLElementTagNameMap>(
   return elem;
 }
 
-function buildButtonRow(wrapperId: string): { wrapper: HTMLDivElement; generateBtn: HTMLButtonElement; settingsBtn: HTMLButtonElement } {
+function buildButtonRow(wrapperId: string): {
+  wrapper: HTMLDivElement;
+  generateBtn: HTMLButtonElement;
+  settingsBtn: HTMLButtonElement;
+} {
   const wrapper = el('div', { id: wrapperId, class: 'pr-please-wrapper' }) as HTMLDivElement;
   const row = el('div', { class: 'prp-row' });
   const generateBtn = el('button', { type: 'button', class: 'prp-btn', id: 'prp-generate-btn' }, [
-    icon('sparkle'), ' Generate with AI',
+    icon('sparkle'),
+    ' Generate with AI',
   ]) as HTMLButtonElement;
-  const settingsBtn = el('button', { type: 'button', class: 'prp-settings-btn', id: 'prp-settings-btn', title: 'Settings' }, [
-    icon('gear'),
-  ]) as HTMLButtonElement;
+  const settingsBtn = el(
+    'button',
+    { type: 'button', class: 'prp-settings-btn', id: 'prp-settings-btn', title: 'Settings' },
+    [icon('gear')]
+  ) as HTMLButtonElement;
   row.appendChild(generateBtn);
   row.appendChild(settingsBtn);
   wrapper.appendChild(row);
@@ -555,11 +604,15 @@ function buildButtonRow(wrapperId: string): { wrapper: HTMLDivElement; generateB
 }
 
 function isExistingPrPage(): boolean {
-  return /\/pull\/\d+/.test(window.location.pathname) && !/\/compare\//.test(window.location.pathname);
+  return (
+    /\/pull\/\d+/.test(window.location.pathname) && !/\/compare\//.test(window.location.pathname)
+  );
 }
 
 function injectButton() {
-  const titleInput = document.querySelector('input[name="pull_request[title]"]') as HTMLInputElement | null;
+  const titleInput = document.querySelector(
+    'input[name="pull_request[title]"]'
+  ) as HTMLInputElement | null;
 
   if (titleInput && !document.getElementById('pr-please-wrapper')) {
     // Create-PR form or existing PR edit form with title visible.
@@ -571,7 +624,9 @@ function injectButton() {
 
   // Fallback: existing PR body-only edit form (title input not found but textarea is).
   if (isExistingPrPage() && !document.getElementById('pr-please-edit-wrapper')) {
-    const bodyTextarea = document.querySelector('textarea[name="pull_request[body]"]') as HTMLTextAreaElement | null;
+    const bodyTextarea = document.querySelector(
+      'textarea[name="pull_request[body]"]'
+    ) as HTMLTextAreaElement | null;
     if (!bodyTextarea) return;
 
     // Don't double-inject if the primary wrapper is already in the same form.
@@ -581,7 +636,9 @@ function injectButton() {
     const { wrapper } = buildButtonRow('pr-please-edit-wrapper');
 
     // Prefer injecting before the form's action buttons row, fall back to after textarea.
-    const actionRow = form?.querySelector('.form-actions, .comment-form-actions, [class*="actions"]');
+    const actionRow = form?.querySelector(
+      '.form-actions, .comment-form-actions, [class*="actions"]'
+    );
     if (actionRow) {
       actionRow.insertAdjacentElement('beforebegin', wrapper);
     } else {
@@ -622,7 +679,9 @@ async function runGeneration(preview: PreviewHandles, opts: { useCachedDiff: boo
       function settle(fn: () => void) {
         if (settled) return;
         settled = true;
-        try { port.disconnect(); } catch {}
+        try {
+          port.disconnect();
+        } catch {}
         fn();
       }
 
@@ -643,7 +702,9 @@ async function runGeneration(preview: PreviewHandles, opts: { useCachedDiff: boo
               generatedData = { title, description };
               preview.setResult({ title, description, costEstimate: msg.costEstimate });
               resolve();
-            } catch (e: any) { reject(e); }
+            } catch (e: any) {
+              reject(e);
+            }
           });
         } else if (msg.type === 'error') {
           settle(() => reject(new Error(msg.message)));
@@ -664,12 +725,12 @@ async function runGeneration(preview: PreviewHandles, opts: { useCachedDiff: boo
         useCachedDiff: opts.useCachedDiff,
       });
     });
-
   } catch (err: any) {
     console.error('PR-Please generation error:', err);
-    const safeMessage = (err?.message && !String(err.message).includes('<'))
-      ? err.message
-      : 'An unexpected error occurred. Check the console for details.';
+    const safeMessage =
+      err?.message && !String(err.message).includes('<')
+        ? err.message
+        : 'An unexpected error occurred. Check the console for details.';
     preview.setError(safeMessage);
   } finally {
     preview.setBusy(false);
@@ -677,8 +738,12 @@ async function runGeneration(preview: PreviewHandles, opts: { useCachedDiff: boo
 }
 
 function applyResult(data: { title: string; description: string }) {
-  const titleInput = document.querySelector('input[name="pull_request[title]"]') as HTMLInputElement | null;
-  const bodyInput = document.querySelector('textarea[name="pull_request[body]"]') as HTMLTextAreaElement | null;
+  const titleInput = document.querySelector(
+    'input[name="pull_request[title]"]'
+  ) as HTMLInputElement | null;
+  const bodyInput = document.querySelector(
+    'textarea[name="pull_request[body]"]'
+  ) as HTMLTextAreaElement | null;
 
   if (titleInput && shouldOverwrite(titleInput.value, data.title)) {
     titleInput.value = data.title;
@@ -731,7 +796,9 @@ function openPreviewModal(initialExtra: string): PreviewHandles {
   body.appendChild(titleGroup);
 
   const bodyGroup = el('div', { class: 'prp-form-group' });
-  bodyGroup.appendChild(el('label', { class: 'prp-label', for: 'prp-preview-body' }, ['Description']));
+  bodyGroup.appendChild(
+    el('label', { class: 'prp-label', for: 'prp-preview-body' }, ['Description'])
+  );
   const bodyTextarea = el('textarea', {
     class: 'prp-preview-body-input',
     id: 'prp-preview-body',
@@ -745,10 +812,12 @@ function openPreviewModal(initialExtra: string): PreviewHandles {
   body.appendChild(costRow);
 
   const extraGroup = el('div', { class: 'prp-form-group' });
-  extraGroup.appendChild(el('label', { class: 'prp-label', for: 'prp-extra-context' }, [
-    'Extra context ',
-    el('span', { class: 'prp-label-badge' }, ['Optional']),
-  ]));
+  extraGroup.appendChild(
+    el('label', { class: 'prp-label', for: 'prp-extra-context' }, [
+      'Extra context ',
+      el('span', { class: 'prp-label-badge' }, ['Optional']),
+    ])
+  );
   const extraTextarea = el('textarea', {
     class: 'prp-extra-input',
     id: 'prp-extra-context',
@@ -756,24 +825,52 @@ function openPreviewModal(initialExtra: string): PreviewHandles {
   }) as HTMLTextAreaElement;
   extraTextarea.value = initialExtra;
   extraGroup.appendChild(extraTextarea);
-  extraGroup.appendChild(el('div', { class: 'prp-hint' }, ['Saved per-tab until you close the browser.']));
+  extraGroup.appendChild(
+    el('div', { class: 'prp-hint' }, ['Saved per-tab until you close the browser.'])
+  );
   body.appendChild(extraGroup);
 
   const footer = el('div', { class: 'prp-preview-footer' });
   const variationsGroup = el('div', { class: 'prp-variations' });
-  const prevBtn = el('button', { type: 'button', class: 'prp-nav-btn', title: 'Previous variation', 'aria-label': 'Previous variation' }, ['\u2190']) as HTMLButtonElement;
+  const prevBtn = el(
+    'button',
+    {
+      type: 'button',
+      class: 'prp-nav-btn',
+      title: 'Previous variation',
+      'aria-label': 'Previous variation',
+    },
+    ['\u2190']
+  ) as HTMLButtonElement;
   const variationLabel = el('span', { class: 'prp-variation-label' }, ['—']);
-  const nextBtn = el('button', { type: 'button', class: 'prp-nav-btn', title: 'Next variation', 'aria-label': 'Next variation' }, ['\u2192']) as HTMLButtonElement;
+  const nextBtn = el(
+    'button',
+    {
+      type: 'button',
+      class: 'prp-nav-btn',
+      title: 'Next variation',
+      'aria-label': 'Next variation',
+    },
+    ['\u2192']
+  ) as HTMLButtonElement;
   variationsGroup.appendChild(prevBtn);
   variationsGroup.appendChild(variationLabel);
   variationsGroup.appendChild(nextBtn);
   variationsGroup.hidden = true;
   footer.appendChild(variationsGroup);
 
-  const discardBtn = el('button', { type: 'button', class: 'prp-action-btn danger' }, ['Discard']) as HTMLButtonElement;
-  const editBtn = el('button', { type: 'button', class: 'prp-action-btn' }, ['Edit']) as HTMLButtonElement;
-  const regenBtn = el('button', { type: 'button', class: 'prp-action-btn' }, ['Regenerate']) as HTMLButtonElement;
-  const applyBtn = el('button', { type: 'button', class: 'prp-action-btn primary' }, ['Apply']) as HTMLButtonElement;
+  const discardBtn = el('button', { type: 'button', class: 'prp-action-btn danger' }, [
+    'Discard',
+  ]) as HTMLButtonElement;
+  const editBtn = el('button', { type: 'button', class: 'prp-action-btn' }, [
+    'Edit',
+  ]) as HTMLButtonElement;
+  const regenBtn = el('button', { type: 'button', class: 'prp-action-btn' }, [
+    'Regenerate',
+  ]) as HTMLButtonElement;
+  const applyBtn = el('button', { type: 'button', class: 'prp-action-btn primary' }, [
+    'Apply',
+  ]) as HTMLButtonElement;
   footer.appendChild(discardBtn);
   footer.appendChild(editBtn);
   footer.appendChild(regenBtn);
@@ -886,9 +983,21 @@ function openPreviewModal(initialExtra: string): PreviewHandles {
   }
 
   const handles: PreviewHandles = {
-    titleInput, bodyTextarea, extraTextarea, status,
-    applyBtn, regenBtn, editBtn, discardBtn, overlay,
-    setEditable, close, setResult, setBusy, setError, setStreamingText,
+    titleInput,
+    bodyTextarea,
+    extraTextarea,
+    status,
+    applyBtn,
+    regenBtn,
+    editBtn,
+    discardBtn,
+    overlay,
+    setEditable,
+    close,
+    setResult,
+    setBusy,
+    setError,
+    setStreamingText,
   };
 
   function onKey(e: KeyboardEvent) {
@@ -961,7 +1070,10 @@ async function openSettingsModal() {
   const modal = el('div', { class: 'prp-modal' });
 
   const header = el('div', { class: 'prp-modal-header' });
-  const titleDiv = el('div', { class: 'prp-modal-title' }, [icon('sparkle'), ' PR-Please Settings']);
+  const titleDiv = el('div', { class: 'prp-modal-title' }, [
+    icon('sparkle'),
+    ' PR-Please Settings',
+  ]);
   const closeBtn = el('button', { class: 'prp-close-btn', id: 'prp-modal-close' }, [icon('close')]);
   header.appendChild(titleDiv);
   header.appendChild(closeBtn);
@@ -971,7 +1083,9 @@ async function openSettingsModal() {
   const intro = el('div', { class: 'prp-intro' });
   const introTitle = el('div', { class: 'prp-intro-title' }, ['AI Provider']);
   intro.appendChild(introTitle);
-  intro.appendChild(el('div', { class: 'prp-intro-desc' }, ['Generate PR content directly from your browser.']));
+  intro.appendChild(
+    el('div', { class: 'prp-intro-desc' }, ['Generate PR content directly from your browser.'])
+  );
   body.appendChild(intro);
 
   // Provider selector
@@ -982,26 +1096,43 @@ async function openSettingsModal() {
     providerSelect.appendChild(el('option', { value: id }, [PROVIDERS[id].label]));
   }
   providerGroup.appendChild(providerSelect);
-  providerGroup.appendChild(el('div', { class: 'prp-hint' }, ['Each provider keeps its own API key and model.']));
+  providerGroup.appendChild(
+    el('div', { class: 'prp-hint' }, ['Each provider keeps its own API key and model.'])
+  );
   body.appendChild(providerGroup);
 
   // API Endpoint
   const endpointGroup = el('div', { class: 'prp-form-group' });
-  endpointGroup.appendChild(el('label', { class: 'prp-label', for: 'prp-api-provider' }, ['API Endpoint']));
+  endpointGroup.appendChild(
+    el('label', { class: 'prp-label', for: 'prp-api-provider' }, ['API Endpoint'])
+  );
   const endpointSelect = el('select', { class: 'prp-select', id: 'prp-api-provider' });
   endpointSelect.appendChild(el('option', { value: 'default' }, ['Official']));
   endpointSelect.appendChild(el('option', { value: 'custom' }, ['Custom URL']));
   endpointGroup.appendChild(endpointSelect);
-  endpointGroup.appendChild(el('div', { class: 'prp-hint' }, ['Where requests are sent. Choose Custom for a proxy.']));
+  endpointGroup.appendChild(
+    el('div', { class: 'prp-hint' }, ['Where requests are sent. Choose Custom for a proxy.'])
+  );
   body.appendChild(endpointGroup);
 
   // Custom URL (conditional)
   const customUrlGroup = el('div', { class: 'prp-form-group', id: 'prp-custom-url-group' });
   customUrlGroup.hidden = true;
-  customUrlGroup.appendChild(el('label', { class: 'prp-label', for: 'prp-base-url' }, ['Custom URL']));
-  const baseUrlInput = el('input', { class: 'prp-input', id: 'prp-base-url', type: 'url', placeholder: 'https://your-proxy.example.com', autocomplete: 'off', spellcheck: 'false' });
+  customUrlGroup.appendChild(
+    el('label', { class: 'prp-label', for: 'prp-base-url' }, ['Custom URL'])
+  );
+  const baseUrlInput = el('input', {
+    class: 'prp-input',
+    id: 'prp-base-url',
+    type: 'url',
+    placeholder: 'https://your-proxy.example.com',
+    autocomplete: 'off',
+    spellcheck: 'false',
+  });
   customUrlGroup.appendChild(baseUrlInput);
-  customUrlGroup.appendChild(el('div', { class: 'prp-hint' }, ['Must include the scheme (https:// or http://).']));
+  customUrlGroup.appendChild(
+    el('div', { class: 'prp-hint' }, ['Must include the scheme (https:// or http://).'])
+  );
   body.appendChild(customUrlGroup);
 
   // Model
@@ -1014,12 +1145,25 @@ async function openSettingsModal() {
   // API Key
   const apiKeyGroup = el('div', { class: 'prp-form-group', id: 'prp-api-key-group' });
   apiKeyGroup.appendChild(el('label', { class: 'prp-label', for: 'prp-api-key' }, ['API Key']));
-  const apiKeyInput = el('input', { class: 'prp-input', type: 'password', id: 'prp-api-key', placeholder: 'Enter your API key', autocomplete: 'off', spellcheck: 'false' });
+  const apiKeyInput = el('input', {
+    class: 'prp-input',
+    type: 'password',
+    id: 'prp-api-key',
+    placeholder: 'Enter your API key',
+    autocomplete: 'off',
+    spellcheck: 'false',
+  });
   apiKeyGroup.appendChild(apiKeyInput);
-  apiKeyGroup.appendChild(el('div', { class: 'prp-hint' }, ['Stored locally in your browser, never synced']));
+  apiKeyGroup.appendChild(
+    el('div', { class: 'prp-hint' }, ['Stored locally in your browser, never synced'])
+  );
   body.appendChild(apiKeyGroup);
 
-  function applyEndpointChoice(providerId: ProviderId, choice: EndpointChoice, storedBaseUrl?: string) {
+  function applyEndpointChoice(
+    providerId: ProviderId,
+    choice: EndpointChoice,
+    storedBaseUrl?: string
+  ) {
     const provider = PROVIDERS[providerId];
     endpointSelect.value = choice;
     customUrlGroup.hidden = choice !== 'custom';
@@ -1046,11 +1190,17 @@ async function openSettingsModal() {
     for (const m of provider.modelOptions) {
       modelSelect.appendChild(el('option', { value: m }, [m]));
     }
-    modelSelect.value = provider.modelOptions.includes(config.model) ? config.model : provider.defaultModel;
+    modelSelect.value = provider.modelOptions.includes(config.model)
+      ? config.model
+      : provider.defaultModel;
 
     baseUrlInput.value = '';
     const baseUrl = config.baseUrl || provider.defaultBaseUrl;
-    applyEndpointChoice(providerId, resolveEndpointChoice(baseUrl, provider.defaultBaseUrl), baseUrl);
+    applyEndpointChoice(
+      providerId,
+      resolveEndpointChoice(baseUrl, provider.defaultBaseUrl),
+      baseUrl
+    );
 
     apiKeyGroup.hidden = !provider.requiresApiKey;
     apiKeyInput.placeholder = provider.requiresApiKey ? `Enter your ${provider.label} API key` : '';
@@ -1072,15 +1222,29 @@ async function openSettingsModal() {
   redactGroup.appendChild(el('label', { class: 'prp-label' }, ['Diff Redaction']));
   const tagWrapper = el('div', { class: 'prp-tag-wrapper' }) as HTMLDivElement;
   const tagAddRow = el('div', { class: 'prp-tag-add-row' });
-  const tagInput = el('input', { class: 'prp-tag-input', type: 'text', placeholder: 'e.g. secrets/**, *.pem', autocomplete: 'off', spellcheck: 'false' }) as HTMLInputElement;
-  const tagAddBtn = el('button', { type: 'button', class: 'prp-tag-btn' }, ['Add']) as HTMLButtonElement;
-  const tagRecommBtn = el('button', { type: 'button', class: 'prp-tag-btn' }, ['Recommended']) as HTMLButtonElement;
+  const tagInput = el('input', {
+    class: 'prp-tag-input',
+    type: 'text',
+    placeholder: 'e.g. secrets/**, *.pem',
+    autocomplete: 'off',
+    spellcheck: 'false',
+  }) as HTMLInputElement;
+  const tagAddBtn = el('button', { type: 'button', class: 'prp-tag-btn' }, [
+    'Add',
+  ]) as HTMLButtonElement;
+  const tagRecommBtn = el('button', { type: 'button', class: 'prp-tag-btn' }, [
+    'Recommended',
+  ]) as HTMLButtonElement;
   tagAddRow.appendChild(tagInput);
   tagAddRow.appendChild(tagAddBtn);
   tagAddRow.appendChild(tagRecommBtn);
   redactGroup.appendChild(tagWrapper);
   redactGroup.appendChild(tagAddRow);
-  redactGroup.appendChild(el('div', { class: 'prp-hint' }, ['Files matching these patterns are redacted before the diff is sent.']));
+  redactGroup.appendChild(
+    el('div', { class: 'prp-hint' }, [
+      'Files matching these patterns are redacted before the diff is sent.',
+    ])
+  );
   body.appendChild(redactGroup);
 
   const RECOMMENDED = ['.env*', 'secrets/**', '*.pem', '*.key', '*.cert'];
@@ -1090,9 +1254,11 @@ async function openSettingsModal() {
     tagWrapper.textContent = '';
     for (const p of localPatterns) {
       const chip = el('span', { class: 'prp-tag' }, [p]);
-      const removeBtn = el('button', { type: 'button', class: 'prp-tag-remove' }, ['×']) as HTMLButtonElement;
+      const removeBtn = el('button', { type: 'button', class: 'prp-tag-remove' }, [
+        '×',
+      ]) as HTMLButtonElement;
       removeBtn.addEventListener('click', () => {
-        localPatterns = localPatterns.filter(x => x !== p);
+        localPatterns = localPatterns.filter((x) => x !== p);
         renderLocalTags();
       });
       chip.appendChild(removeBtn);
@@ -1107,9 +1273,21 @@ async function openSettingsModal() {
     renderLocalTags();
   }
 
-  tagAddBtn.addEventListener('click', () => { addLocalPattern(tagInput.value); tagInput.value = ''; tagInput.focus(); });
-  tagInput.addEventListener('keydown', (e) => { if (e.key === 'Enter') { e.preventDefault(); addLocalPattern(tagInput.value); tagInput.value = ''; } });
-  tagRecommBtn.addEventListener('click', () => { RECOMMENDED.forEach(addLocalPattern); });
+  tagAddBtn.addEventListener('click', () => {
+    addLocalPattern(tagInput.value);
+    tagInput.value = '';
+    tagInput.focus();
+  });
+  tagInput.addEventListener('keydown', (e) => {
+    if (e.key === 'Enter') {
+      e.preventDefault();
+      addLocalPattern(tagInput.value);
+      tagInput.value = '';
+    }
+  });
+  tagRecommBtn.addEventListener('click', () => {
+    RECOMMENDED.forEach(addLocalPattern);
+  });
   renderLocalTags();
 
   const saveBtn = el('button', { class: 'prp-save-btn', id: 'prp-save-btn' }, ['Save Settings']);

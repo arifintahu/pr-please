@@ -38,53 +38,85 @@ export interface StoredSettings {
 
 function emptyConfigs(): Record<ProviderId, ProviderConfig> {
   return {
-    gemini: { apiKeyEncoded: '', baseUrl: PROVIDERS.gemini.defaultBaseUrl, model: PROVIDERS.gemini.defaultModel },
-    openai: { apiKeyEncoded: '', baseUrl: PROVIDERS.openai.defaultBaseUrl, model: PROVIDERS.openai.defaultModel },
-    anthropic: { apiKeyEncoded: '', baseUrl: PROVIDERS.anthropic.defaultBaseUrl, model: PROVIDERS.anthropic.defaultModel },
-    ollama: { apiKeyEncoded: '', baseUrl: PROVIDERS.ollama.defaultBaseUrl, model: PROVIDERS.ollama.defaultModel },
+    gemini: {
+      apiKeyEncoded: '',
+      baseUrl: PROVIDERS.gemini.defaultBaseUrl,
+      model: PROVIDERS.gemini.defaultModel,
+    },
+    openai: {
+      apiKeyEncoded: '',
+      baseUrl: PROVIDERS.openai.defaultBaseUrl,
+      model: PROVIDERS.openai.defaultModel,
+    },
+    anthropic: {
+      apiKeyEncoded: '',
+      baseUrl: PROVIDERS.anthropic.defaultBaseUrl,
+      model: PROVIDERS.anthropic.defaultModel,
+    },
+    ollama: {
+      apiKeyEncoded: '',
+      baseUrl: PROVIDERS.ollama.defaultBaseUrl,
+      model: PROVIDERS.ollama.defaultModel,
+    },
   };
 }
 
 export function loadSettings(): Promise<StoredSettings> {
   return new Promise((resolve) => {
-    chrome.storage.local.get(['provider', 'providers', 'redactPatterns', 'apiKeyEncoded', 'baseUrl', 'model'], (res) => {
-      const configs = emptyConfigs();
+    chrome.storage.local.get(
+      ['provider', 'providers', 'redactPatterns', 'apiKeyEncoded', 'baseUrl', 'model'],
+      (res) => {
+        const configs = emptyConfigs();
 
-      if (res.providers && typeof res.providers === 'object') {
-        for (const id of Object.keys(configs) as ProviderId[]) {
-          const stored = res.providers[id];
-          if (stored) {
-            configs[id] = {
-              apiKeyEncoded: typeof stored.apiKeyEncoded === 'string' ? stored.apiKeyEncoded : '',
-              baseUrl: typeof stored.baseUrl === 'string' && stored.baseUrl ? stored.baseUrl : configs[id].baseUrl,
-              model: typeof stored.model === 'string' && stored.model ? stored.model : configs[id].model,
-            };
+        if (res.providers && typeof res.providers === 'object') {
+          for (const id of Object.keys(configs) as ProviderId[]) {
+            const stored = res.providers[id];
+            if (stored) {
+              configs[id] = {
+                apiKeyEncoded: typeof stored.apiKeyEncoded === 'string' ? stored.apiKeyEncoded : '',
+                baseUrl:
+                  typeof stored.baseUrl === 'string' && stored.baseUrl
+                    ? stored.baseUrl
+                    : configs[id].baseUrl,
+                model:
+                  typeof stored.model === 'string' && stored.model
+                    ? stored.model
+                    : configs[id].model,
+              };
+            }
           }
+        } else if (res.apiKeyEncoded || res.baseUrl || res.model) {
+          // Legacy single-provider settings — migrate to gemini config.
+          configs.gemini = {
+            apiKeyEncoded: typeof res.apiKeyEncoded === 'string' ? res.apiKeyEncoded : '',
+            baseUrl:
+              typeof res.baseUrl === 'string' && res.baseUrl ? res.baseUrl : configs.gemini.baseUrl,
+            model: typeof res.model === 'string' && res.model ? res.model : configs.gemini.model,
+          };
         }
-      } else if (res.apiKeyEncoded || res.baseUrl || res.model) {
-        // Legacy single-provider settings — migrate to gemini config.
-        configs.gemini = {
-          apiKeyEncoded: typeof res.apiKeyEncoded === 'string' ? res.apiKeyEncoded : '',
-          baseUrl: typeof res.baseUrl === 'string' && res.baseUrl ? res.baseUrl : configs.gemini.baseUrl,
-          model: typeof res.model === 'string' && res.model ? res.model : configs.gemini.model,
-        };
-      }
 
-      const provider = isProviderId(res.provider) ? res.provider : DEFAULT_PROVIDER;
-      const redactPatterns = Array.isArray(res.redactPatterns) ? res.redactPatterns as string[] : [];
-      resolve({ provider, providers: configs, redactPatterns });
-    });
+        const provider = isProviderId(res.provider) ? res.provider : DEFAULT_PROVIDER;
+        const redactPatterns = Array.isArray(res.redactPatterns)
+          ? (res.redactPatterns as string[])
+          : [];
+        resolve({ provider, providers: configs, redactPatterns });
+      }
+    );
   });
 }
 
 export function saveSettings(settings: StoredSettings): Promise<void> {
   return new Promise((resolve, reject) => {
     chrome.storage.local.set(
-      { provider: settings.provider, providers: settings.providers, redactPatterns: settings.redactPatterns },
+      {
+        provider: settings.provider,
+        providers: settings.providers,
+        redactPatterns: settings.redactPatterns,
+      },
       () => {
         if (chrome.runtime.lastError) reject(new Error(chrome.runtime.lastError.message));
         else resolve();
-      },
+      }
     );
   });
 }

@@ -2,6 +2,8 @@
 
 This file provides context for Claude Code when working on this repository.
 
+@.claude/rules.md
+
 ## Project Overview
 
 PR-Please is a Chrome extension that generates GitHub Pull Request titles and descriptions using Google Gemini AI. It injects a "Generate with AI" button into GitHub's PR creation page and calls the Gemini API directly from the browser — no backend required.

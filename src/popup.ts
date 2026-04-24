@@ -59,8 +59,8 @@ const PROVIDER_KEY_LINKS: Record<ProviderId, string> = {
 
 const PROVIDER_KEY_DESCS: Record<ProviderId, string> = {
   gemini: 'Google Gemini has a free tier. Click below to create a key at Google AI Studio.',
-  openai: 'You\'ll need an OpenAI account. Click below to create a key.',
-  anthropic: 'You\'ll need an Anthropic account. Click below to create a key.',
+  openai: "You'll need an OpenAI account. Click below to create a key.",
+  anthropic: "You'll need an Anthropic account. Click below to create a key.",
   ollama: '',
 };
 
@@ -68,32 +68,32 @@ const RECOMMENDED_PATTERNS = ['.env*', 'secrets/**', '*.pem', '*.key', '*.cert']
 
 document.addEventListener('DOMContentLoaded', async () => {
   // ── Elements ──────────────────────────────────────────────
-  const providerSelect      = document.getElementById('providerSelect') as HTMLSelectElement;
-  const apiProviderSelect   = document.getElementById('apiProvider') as HTMLSelectElement;
-  const customUrlGroup      = document.getElementById('customUrlGroup') as HTMLDivElement;
-  const customBaseUrlInput  = document.getElementById('customBaseUrl') as HTMLInputElement;
-  const modelSelect         = document.getElementById('modelSelect') as HTMLSelectElement;
-  const apiKeyGroup         = document.getElementById('apiKeyGroup') as HTMLDivElement;
-  const apiKeyInput         = document.getElementById('apiKey') as HTMLInputElement;
-  const toggleApiKeyBtn     = document.getElementById('toggleApiKey') as HTMLButtonElement;
-  const saveBtn             = document.getElementById('saveBtn') as HTMLButtonElement;
-  const btnClose            = document.getElementById('btnClose') as HTMLButtonElement;
-  const statusRow           = document.getElementById('statusRow') as HTMLDivElement;
-  const statusText          = document.getElementById('statusText') as HTMLSpanElement;
-  const starCount           = document.getElementById('starCount') as HTMLSpanElement;
-  const starRefreshBtn      = document.getElementById('starRefreshBtn') as HTMLButtonElement;
-  const providerIntroTitle  = document.getElementById('providerIntroTitle') as HTMLDivElement;
-  const onboardingEl        = document.getElementById('onboarding') as HTMLDivElement;
-  const settingsBodyEl      = document.getElementById('settingsBody') as HTMLDivElement;
-  const redactTagsEl        = document.getElementById('redactTags') as HTMLDivElement;
-  const redactInput         = document.getElementById('redactInput') as HTMLInputElement;
-  const redactAddBtn        = document.getElementById('redactAddBtn') as HTMLButtonElement;
+  const providerSelect = document.getElementById('providerSelect') as HTMLSelectElement;
+  const apiProviderSelect = document.getElementById('apiProvider') as HTMLSelectElement;
+  const customUrlGroup = document.getElementById('customUrlGroup') as HTMLDivElement;
+  const customBaseUrlInput = document.getElementById('customBaseUrl') as HTMLInputElement;
+  const modelSelect = document.getElementById('modelSelect') as HTMLSelectElement;
+  const apiKeyGroup = document.getElementById('apiKeyGroup') as HTMLDivElement;
+  const apiKeyInput = document.getElementById('apiKey') as HTMLInputElement;
+  const toggleApiKeyBtn = document.getElementById('toggleApiKey') as HTMLButtonElement;
+  const saveBtn = document.getElementById('saveBtn') as HTMLButtonElement;
+  const btnClose = document.getElementById('btnClose') as HTMLButtonElement;
+  const statusRow = document.getElementById('statusRow') as HTMLDivElement;
+  const statusText = document.getElementById('statusText') as HTMLSpanElement;
+  const starCount = document.getElementById('starCount') as HTMLSpanElement;
+  const starRefreshBtn = document.getElementById('starRefreshBtn') as HTMLButtonElement;
+  const providerIntroTitle = document.getElementById('providerIntroTitle') as HTMLDivElement;
+  const onboardingEl = document.getElementById('onboarding') as HTMLDivElement;
+  const settingsBodyEl = document.getElementById('settingsBody') as HTMLDivElement;
+  const redactTagsEl = document.getElementById('redactTags') as HTMLDivElement;
+  const redactInput = document.getElementById('redactInput') as HTMLInputElement;
+  const redactAddBtn = document.getElementById('redactAddBtn') as HTMLButtonElement;
   const redactRecommendedBtn = document.getElementById('redactRecommendedBtn') as HTMLButtonElement;
-  const exportBtn           = document.getElementById('exportBtn') as HTMLButtonElement;
-  const exportIncludeKeys   = document.getElementById('exportIncludeKeys') as HTMLInputElement;
-  const importFile          = document.getElementById('importFile') as HTMLInputElement;
-  const importStatusRow     = document.getElementById('importStatusRow') as HTMLDivElement;
-  const importStatusText    = document.getElementById('importStatusText') as HTMLSpanElement;
+  const exportBtn = document.getElementById('exportBtn') as HTMLButtonElement;
+  const exportIncludeKeys = document.getElementById('exportIncludeKeys') as HTMLInputElement;
+  const importFile = document.getElementById('importFile') as HTMLInputElement;
+  const importStatusRow = document.getElementById('importStatusRow') as HTMLDivElement;
+  const importStatusText = document.getElementById('importStatusText') as HTMLSpanElement;
 
   loadStarCount(starCount);
 
@@ -110,7 +110,8 @@ document.addEventListener('DOMContentLoaded', async () => {
 
   // ── Onboarding ────────────────────────────────────────────
   const activeConfig = settings.providers[currentProviderId];
-  const needsOnboarding = PROVIDERS[currentProviderId].requiresApiKey && !activeConfig.apiKeyEncoded;
+  const needsOnboarding =
+    PROVIDERS[currentProviderId].requiresApiKey && !activeConfig.apiKeyEncoded;
 
   function showOnboarding() {
     onboardingEl.hidden = false;
@@ -132,7 +133,8 @@ document.addEventListener('DOMContentLoaded', async () => {
     if (step === 1) (document.getElementById('onboardStep1') as HTMLElement).hidden = false;
     else if (step === 2) (document.getElementById('onboardStep2') as HTMLElement).hidden = false;
     else if (step === 3) (document.getElementById('onboardStep3') as HTMLElement).hidden = false;
-    else if (step === 'ollama') (document.getElementById('onboardStepOllama') as HTMLElement).hidden = false;
+    else if (step === 'ollama')
+      (document.getElementById('onboardStepOllama') as HTMLElement).hidden = false;
   }
 
   function updateOnboardKeyStep(provider: ProviderId) {
@@ -145,27 +147,42 @@ document.addEventListener('DOMContentLoaded', async () => {
     link.textContent = `Get ${PROVIDERS[provider].label} API key →`;
   }
 
-  (document.getElementById('onboardStep1Next') as HTMLButtonElement).addEventListener('click', () => {
-    const sel = document.getElementById('onboardProvider') as HTMLSelectElement;
-    onboardSelectedProvider = isProviderId(sel.value) ? sel.value : 'gemini';
-    if (onboardSelectedProvider === 'ollama') {
-      showOnboardStep('ollama');
-    } else {
-      updateOnboardKeyStep(onboardSelectedProvider);
-      showOnboardStep(2);
+  (document.getElementById('onboardStep1Next') as HTMLButtonElement).addEventListener(
+    'click',
+    () => {
+      const sel = document.getElementById('onboardProvider') as HTMLSelectElement;
+      onboardSelectedProvider = isProviderId(sel.value) ? sel.value : 'gemini';
+      if (onboardSelectedProvider === 'ollama') {
+        showOnboardStep('ollama');
+      } else {
+        updateOnboardKeyStep(onboardSelectedProvider);
+        showOnboardStep(2);
+      }
     }
-  });
+  );
 
-  (document.getElementById('onboardStep2Next') as HTMLButtonElement).addEventListener('click', () => showOnboardStep(3));
-  (document.getElementById('onboardStep2Back') as HTMLButtonElement).addEventListener('click', () => showOnboardStep(1));
-  (document.getElementById('onboardStep3Back') as HTMLButtonElement).addEventListener('click', () => showOnboardStep(2));
-  (document.getElementById('onboardOllamaBack') as HTMLButtonElement).addEventListener('click', () => showOnboardStep(1));
-  (document.getElementById('onboardOllamaDone') as HTMLButtonElement).addEventListener('click', () => {
-    currentProviderId = onboardSelectedProvider;
-    providerSelect.value = currentProviderId;
-    renderForProvider(currentProviderId);
-    dismissOnboarding();
-  });
+  (document.getElementById('onboardStep2Next') as HTMLButtonElement).addEventListener('click', () =>
+    showOnboardStep(3)
+  );
+  (document.getElementById('onboardStep2Back') as HTMLButtonElement).addEventListener('click', () =>
+    showOnboardStep(1)
+  );
+  (document.getElementById('onboardStep3Back') as HTMLButtonElement).addEventListener('click', () =>
+    showOnboardStep(2)
+  );
+  (document.getElementById('onboardOllamaBack') as HTMLButtonElement).addEventListener(
+    'click',
+    () => showOnboardStep(1)
+  );
+  (document.getElementById('onboardOllamaDone') as HTMLButtonElement).addEventListener(
+    'click',
+    () => {
+      currentProviderId = onboardSelectedProvider;
+      providerSelect.value = currentProviderId;
+      renderForProvider(currentProviderId);
+      dismissOnboarding();
+    }
+  );
 
   const toggleOnboardKey = document.getElementById('onboardToggleKey') as HTMLButtonElement;
   const onboardApiKeyInput = document.getElementById('onboardApiKey') as HTMLInputElement;
@@ -175,29 +192,35 @@ document.addEventListener('DOMContentLoaded', async () => {
     toggleOnboardKey.setAttribute('aria-pressed', String(revealing));
   });
 
-  (document.getElementById('onboardSave') as HTMLButtonElement).addEventListener('click', async () => {
-    const key = onboardApiKeyInput.value.trim();
-    if (!key) { onboardApiKeyInput.focus(); return; }
-    const provider = PROVIDERS[onboardSelectedProvider];
-    const updated: StoredSettings = {
-      ...settings,
-      provider: onboardSelectedProvider,
-      providers: {
-        ...settings.providers,
-        [onboardSelectedProvider]: {
-          ...settings.providers[onboardSelectedProvider],
-          apiKeyEncoded: obfuscateApiKey(key),
-          baseUrl: provider.defaultBaseUrl,
-          model: provider.defaultModel,
+  (document.getElementById('onboardSave') as HTMLButtonElement).addEventListener(
+    'click',
+    async () => {
+      const key = onboardApiKeyInput.value.trim();
+      if (!key) {
+        onboardApiKeyInput.focus();
+        return;
+      }
+      const provider = PROVIDERS[onboardSelectedProvider];
+      const updated: StoredSettings = {
+        ...settings,
+        provider: onboardSelectedProvider,
+        providers: {
+          ...settings.providers,
+          [onboardSelectedProvider]: {
+            ...settings.providers[onboardSelectedProvider],
+            apiKeyEncoded: obfuscateApiKey(key),
+            baseUrl: provider.defaultBaseUrl,
+            model: provider.defaultModel,
+          },
         },
-      },
-    };
-    await saveSettings(updated);
-    Object.assign(settings, updated);
-    currentProviderId = onboardSelectedProvider;
-    renderForProvider(currentProviderId);
-    dismissOnboarding();
-  });
+      };
+      await saveSettings(updated);
+      Object.assign(settings, updated);
+      currentProviderId = onboardSelectedProvider;
+      renderForProvider(currentProviderId);
+      dismissOnboarding();
+    }
+  );
 
   for (const id of ['onboardDismiss1', 'onboardDismiss2', 'onboardDismiss3']) {
     document.getElementById(id)?.addEventListener('click', dismissOnboarding);
@@ -215,13 +238,23 @@ document.addEventListener('DOMContentLoaded', async () => {
       option.textContent = model;
       modelSelect.appendChild(option);
     }
-    modelSelect.value = options.includes(selectedModel) ? selectedModel : PROVIDERS[providerId].defaultModel;
+    modelSelect.value = options.includes(selectedModel)
+      ? selectedModel
+      : PROVIDERS[providerId].defaultModel;
   }
 
-  function applyEndpointChoice(providerId: ProviderId, choice: EndpointChoice, storedBaseUrl?: string) {
+  function applyEndpointChoice(
+    providerId: ProviderId,
+    choice: EndpointChoice,
+    storedBaseUrl?: string
+  ) {
     apiProviderSelect.value = choice;
     customUrlGroup.hidden = choice !== 'custom';
-    if (choice === 'custom' && storedBaseUrl && storedBaseUrl !== PROVIDERS[providerId].defaultBaseUrl) {
+    if (
+      choice === 'custom' &&
+      storedBaseUrl &&
+      storedBaseUrl !== PROVIDERS[providerId].defaultBaseUrl
+    ) {
       customBaseUrlInput.value = storedBaseUrl;
     }
   }
@@ -235,7 +268,11 @@ document.addEventListener('DOMContentLoaded', async () => {
     populateModelOptions(providerId, config.model);
     const baseUrl = config.baseUrl || provider.defaultBaseUrl;
     customBaseUrlInput.value = '';
-    applyEndpointChoice(providerId, resolveEndpointChoice(baseUrl, provider.defaultBaseUrl), baseUrl);
+    applyEndpointChoice(
+      providerId,
+      resolveEndpointChoice(baseUrl, provider.defaultBaseUrl),
+      baseUrl
+    );
     apiKeyGroup.hidden = !provider.requiresApiKey;
     apiKeyInput.placeholder = provider.requiresApiKey ? `Enter your ${provider.label} API key` : '';
     apiKeyInput.value = config.apiKeyEncoded ? deobfuscateApiKey(config.apiKeyEncoded) : '';
@@ -251,7 +288,9 @@ document.addEventListener('DOMContentLoaded', async () => {
       const u = new URL(value);
       if (u.protocol !== 'http:' && u.protocol !== 'https:') return null;
       return value.replace(/\/$/, '');
-    } catch { return null; }
+    } catch {
+      return null;
+    }
   }
 
   function showStatus(message: string, isError = false) {
@@ -345,7 +384,7 @@ document.addEventListener('DOMContentLoaded', async () => {
       removeBtn.setAttribute('aria-label', `Remove ${pattern}`);
       removeBtn.textContent = '×';
       removeBtn.addEventListener('click', () => {
-        redactPatterns = redactPatterns.filter(p => p !== pattern);
+        redactPatterns = redactPatterns.filter((p) => p !== pattern);
         renderTags();
       });
       chip.appendChild(removeBtn);
@@ -360,9 +399,21 @@ document.addEventListener('DOMContentLoaded', async () => {
     renderTags();
   }
 
-  redactAddBtn.addEventListener('click', () => { addPattern(redactInput.value); redactInput.value = ''; redactInput.focus(); });
-  redactInput.addEventListener('keydown', (e) => { if (e.key === 'Enter') { e.preventDefault(); addPattern(redactInput.value); redactInput.value = ''; } });
-  redactRecommendedBtn.addEventListener('click', () => { RECOMMENDED_PATTERNS.forEach(addPattern); });
+  redactAddBtn.addEventListener('click', () => {
+    addPattern(redactInput.value);
+    redactInput.value = '';
+    redactInput.focus();
+  });
+  redactInput.addEventListener('keydown', (e) => {
+    if (e.key === 'Enter') {
+      e.preventDefault();
+      addPattern(redactInput.value);
+      redactInput.value = '';
+    }
+  });
+  redactRecommendedBtn.addEventListener('click', () => {
+    RECOMMENDED_PATTERNS.forEach(addPattern);
+  });
   renderTags();
 
   // ── Export ────────────────────────────────────────────────
@@ -395,7 +446,9 @@ document.addEventListener('DOMContentLoaded', async () => {
     importStatusText.textContent = msg;
     importStatusRow.hidden = false;
     importStatusRow.classList.toggle('error', isError);
-    setTimeout(() => { importStatusRow.hidden = true; }, 3000);
+    setTimeout(() => {
+      importStatusRow.hidden = true;
+    }, 3000);
   }
 
   function validateImport(data: unknown): data is StoredSettings {

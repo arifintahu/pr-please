@@ -1,5 +1,12 @@
 import { GoogleGenerativeAI } from '@google/generative-ai';
-import { parseJsonResponse, readSseLines, trimBaseUrl, type Provider, type ProviderSettings, type TokenUsage } from './types';
+import {
+  parseJsonResponse,
+  readSseLines,
+  trimBaseUrl,
+  type Provider,
+  type ProviderSettings,
+  type TokenUsage,
+} from './types';
 
 export const GEMINI_DEFAULT_BASE_URL = 'https://generativelanguage.googleapis.com';
 export const GEMINI_DEFAULT_MODEL = 'gemini-2.5-flash';
@@ -73,7 +80,11 @@ export const geminiProvider: Provider = {
     return parsed;
   },
 
-  async stream(prompt: string, settings: ProviderSettings, onChunk: (text: string) => void): Promise<TokenUsage | undefined> {
+  async stream(
+    prompt: string,
+    settings: ProviderSettings,
+    onChunk: (text: string) => void
+  ): Promise<TokenUsage | undefined> {
     if (!settings.apiKey) {
       throw new Error('Gemini API key is missing. Open the extension popup to add one.');
     }
@@ -89,7 +100,10 @@ export const geminiProvider: Provider = {
       const response = await result.response;
       const meta = (response as any).usageMetadata;
       if (meta) {
-        return { inputTokens: meta.promptTokenCount ?? 0, outputTokens: meta.candidatesTokenCount ?? 0 };
+        return {
+          inputTokens: meta.promptTokenCount ?? 0,
+          outputTokens: meta.candidatesTokenCount ?? 0,
+        };
       }
       return undefined;
     }
@@ -113,7 +127,10 @@ export const geminiProvider: Provider = {
       const text = data.candidates?.[0]?.content?.parts?.[0]?.text;
       if (text) onChunk(text);
       if (data.usageMetadata) {
-        usage = { inputTokens: data.usageMetadata.promptTokenCount ?? 0, outputTokens: data.usageMetadata.candidatesTokenCount ?? 0 };
+        usage = {
+          inputTokens: data.usageMetadata.promptTokenCount ?? 0,
+          outputTokens: data.usageMetadata.candidatesTokenCount ?? 0,
+        };
       }
     }
     return usage;

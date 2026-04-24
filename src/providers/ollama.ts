@@ -1,4 +1,11 @@
-import { parseJsonResponse, readLines, trimBaseUrl, type Provider, type ProviderSettings, type TokenUsage } from './types';
+import {
+  parseJsonResponse,
+  readLines,
+  trimBaseUrl,
+  type Provider,
+  type ProviderSettings,
+  type TokenUsage,
+} from './types';
 
 export const OLLAMA_DEFAULT_BASE_URL = 'http://127.0.0.1:11434';
 export const OLLAMA_DEFAULT_MODEL = 'llama3.1';
@@ -51,7 +58,11 @@ export const ollamaProvider: Provider = {
     return parsed;
   },
 
-  async stream(prompt: string, settings: ProviderSettings, onChunk: (text: string) => void): Promise<TokenUsage | undefined> {
+  async stream(
+    prompt: string,
+    settings: ProviderSettings,
+    onChunk: (text: string) => void
+  ): Promise<TokenUsage | undefined> {
     const base = trimBaseUrl(settings.baseUrl || OLLAMA_DEFAULT_BASE_URL);
     const response = await fetch(`${base}/api/generate`, {
       method: 'POST',

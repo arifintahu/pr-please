@@ -1,12 +1,15 @@
-import { parseJsonResponse, readSseLines, trimBaseUrl, type Provider, type ProviderSettings, type TokenUsage } from './types';
+import {
+  parseJsonResponse,
+  readSseLines,
+  trimBaseUrl,
+  type Provider,
+  type ProviderSettings,
+  type TokenUsage,
+} from './types';
 
 export const OPENAI_DEFAULT_BASE_URL = 'https://api.openai.com';
 export const OPENAI_DEFAULT_MODEL = 'gpt-5.4-mini';
-export const OPENAI_MODEL_OPTIONS = [
-  'gpt-5.4',
-  'gpt-5.4-mini',
-  'gpt-5.4-nano',
-];
+export const OPENAI_MODEL_OPTIONS = ['gpt-5.4', 'gpt-5.4-mini', 'gpt-5.4-nano'];
 
 export const openaiProvider: Provider = {
   id: 'openai',
@@ -28,7 +31,7 @@ export const openaiProvider: Provider = {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
-        'Authorization': `Bearer ${settings.apiKey}`,
+        Authorization: `Bearer ${settings.apiKey}`,
       },
       body: JSON.stringify({
         model: settings.model,
@@ -54,7 +57,11 @@ export const openaiProvider: Provider = {
     return parsed;
   },
 
-  async stream(prompt: string, settings: ProviderSettings, onChunk: (text: string) => void): Promise<TokenUsage | undefined> {
+  async stream(
+    prompt: string,
+    settings: ProviderSettings,
+    onChunk: (text: string) => void
+  ): Promise<TokenUsage | undefined> {
     if (!settings.apiKey) {
       throw new Error('OpenAI API key is missing. Open the extension popup to add one.');
     }
@@ -64,7 +71,7 @@ export const openaiProvider: Provider = {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
-        'Authorization': `Bearer ${settings.apiKey}`,
+        Authorization: `Bearer ${settings.apiKey}`,
       },
       body: JSON.stringify({
         model: settings.model,
@@ -89,7 +96,10 @@ export const openaiProvider: Provider = {
       const text = data.choices?.[0]?.delta?.content;
       if (text) onChunk(text);
       if (data.usage) {
-        usage = { inputTokens: data.usage.prompt_tokens ?? 0, outputTokens: data.usage.completion_tokens ?? 0 };
+        usage = {
+          inputTokens: data.usage.prompt_tokens ?? 0,
+          outputTokens: data.usage.completion_tokens ?? 0,
+        };
       }
     }
     return usage;
