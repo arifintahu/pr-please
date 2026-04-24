@@ -1,0 +1,60 @@
+{
+  "manifest_version": 3,
+  "name": "PR-Please",
+  "version": "1.0.0",
+  "description": "Generate PR titles and descriptions using AI.",
+  "permissions": [
+    "storage",
+    "activeTab",
+    "tabs"
+  ],
+  "commands": {
+    "trigger-generate": {
+      "suggested_key": {
+        "default": "Alt+Shift+G",
+        "mac": "Alt+Shift+G"
+      },
+      "description": "Generate PR title and description"
+    }
+  },
+  "host_permissions": [
+    "https://github.com/*/*/pull/*",
+    "https://github.com/*/*/compare/*",
+    "https://raw.githubusercontent.com/*",
+    "https://api.github.com/*",
+    "https://generativelanguage.googleapis.com/v1beta/models/*",
+    "https://api.openai.com/v1/*",
+    "https://api.anthropic.com/v1/*",
+    "http://127.0.0.1:8045/*",
+    "http://127.0.0.1:11434/*"
+  ],
+  "content_security_policy": {
+    "extension_pages": "script-src 'self'; object-src 'none'"
+  },
+  "action": {
+    "default_popup": "src/popup.html",
+    "default_icon": {
+      "16": "icons/icon16.png",
+      "32": "icons/icon32.png",
+      "48": "icons/icon48.png",
+      "128": "icons/icon128.png"
+    }
+  },
+  "background": {
+    "service_worker": "src/background.ts",
+    "type": "module"
+  },
+  "content_scripts": [
+    {
+      "matches": ["https://github.com/*"],
+      "js": ["src/content.ts"],
+      "run_at": "document_idle"
+    }
+  ],
+  "icons": {
+    "16": "icons/icon16.png",
+    "32": "icons/icon32.png",
+    "48": "icons/icon48.png",
+    "128": "icons/icon128.png"
+  }
+}

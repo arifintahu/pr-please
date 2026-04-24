@@ -1,0 +1,142 @@
+import { GoogleGenerativeAI } from '@google/generative-ai';
+import {
+  formatHttpError,
+  parseJsonResponse,
+  readSseLines,
+  requireBody,
+  trimBaseUrl,
+  type Provider,
+  type ProviderSettings,
+  type TokenUsage,
+} from './types';
+
+function geminiHeaders(apiKey: string): Record<string, string> {
+  return {
+    'Content-Type': 'application/json',
+    'x-goog-api-key': apiKey,
+    Authorization: `Bearer ${apiKey}`,
+  };
+}
+
+interface GeminiUsageMetadata {
+  promptTokenCount?: number;
+  candidatesTokenCount?: number;
+}
+
+function extractUsage(meta: GeminiUsageMetadata | undefined): TokenUsage | undefined {
+  if (!meta) return undefined;
+  return {
+    inputTokens: meta.promptTokenCount ?? 0,
+    outputTokens: meta.candidatesTokenCount ?? 0,
+  };
+}
+
+// The SDK's GenerationConfig type does not include responseMimeType in this version,
+// but the feature is supported at the REST layer.
+type GeminiGenerationConfig = Record<string, unknown>;
+
+export const GEMINI_DEFAULT_BASE_URL = 'https://generativelanguage.googleapis.com';
+export const GEMINI_DEFAULT_MODEL = 'gemini-2.5-flash';
+export const GEMINI_MODEL_OPTIONS = [
+  'gemini-3.1-flash',
+  'gemini-3.1-flash-lite',
+  'gemini-3.1-pro-low',
+  'gemini-3.1-pro-high',
+  'gemini-2.5-flash',
+  'gemini-2.5-flash-lite',
+  'gemini-2.5-pro',
+];
+
+export const geminiProvider: Provider = {
+  id: 'gemini',
+  label: 'Google Gemini',
+  defaultBaseUrl: GEMINI_DEFAULT_BASE_URL,
+  defaultModel: GEMINI_DEFAULT_MODEL,
+  modelOptions: GEMINI_MODEL_OPTIONS,
+  requiresApiKey: true,
+
+  async generate(prompt: string, settings: ProviderSettings) {
+    if (!settings.apiKey) {
+      throw new Error('Gemini API key is missing. Open the extension popup to add one.');
+    }
+
+    if (!settings.baseUrl || settings.baseUrl === GEMINI_DEFAULT_BASE_URL) {
+      const genAI = new GoogleGenerativeAI(settings.apiKey);
+      const generationConfig: GeminiGenerationConfig = { responseMimeType: 'application/json' };
+      const jsonModel = genAI.getGenerativeModel({
+        model: settings.model,
+        generationConfig,
+      });
+      const result = await jsonModel.generateContent(prompt);
+      const resp = await result.response;
+      const parsed = parseJsonResponse(resp.text());
+      const meta = (resp as { usageMetadata?: GeminiUsageMetadata }).usageMetadata;
+      parsed.usage = extractUsage(meta);
+      return parsed;
+    }
+
+    const url = `${trimBaseUrl(settings.baseUrl)}/v1beta/models/${settings.model}:generateContent?key=${encodeURIComponent(settings.apiKey)}`;
+    const response = await fetch(url, {
+      method: 'POST',
+      headers: geminiHeaders(settings.apiKey),
+      body: JSON.stringify({
+        contents: [{ role: 'user', parts: [{ text: prompt }] }],
+        generationConfig: { responseMimeType: 'application/json' },
+      }),
+    });
+
+    if (!response.ok) {
+      throw formatHttpError('Gemini', response.status, await response.text());
+    }
+    const data = await response.json();
+    const text = data.candidates?.[0]?.content?.parts?.[0]?.text;
+    if (!text) throw new Error('Invalid response structure from Gemini.');
+    const parsed = parseJsonResponse(text);
+    parsed.usage = extractUsage(data.usageMetadata);
+    return parsed;
+  },
+
+  async stream(
+    prompt: string,
+    settings: ProviderSettings,
+    onChunk: (text: string) => void
+  ): Promise<TokenUsage | undefined> {
+    if (!settings.apiKey) {
+      throw new Error('Gemini API key is missing. Open the extension popup to add one.');
+    }
+
+    if (!settings.baseUrl || settings.baseUrl === GEMINI_DEFAULT_BASE_URL) {
+      const genAI = new GoogleGenerativeAI(settings.apiKey);
+      const model = genAI.getGenerativeModel({ model: settings.model });
+      const result = await model.generateContentStream(prompt);
+      for await (const chunk of result.stream) {
+        const text = chunk.text();
+        if (text) onChunk(text);
+      }
+      const response = await result.response;
+      const meta = (response as { usageMetadata?: GeminiUsageMetadata }).usageMetadata;
+      return extractUsage(meta);
+    }
+
+    const url = `${trimBaseUrl(settings.baseUrl)}/v1beta/models/${settings.model}:streamGenerateContent?key=${encodeURIComponent(settings.apiKey)}&alt=sse`;
+    const response = await fetch(url, {
+      method: 'POST',
+      headers: geminiHeaders(settings.apiKey),
+      body: JSON.stringify({ contents: [{ role: 'user', parts: [{ text: prompt }] }] }),
+    });
+
+    if (!response.ok) {
+      throw formatHttpError('Gemini', response.status, await response.text());
+    }
+
+    let usage: TokenUsage | undefined;
+    for await (const line of readSseLines(requireBody(response.body))) {
+      if (!line.startsWith('data: ')) continue;
+      const data = JSON.parse(line.slice(6));
+      const text = data.candidates?.[0]?.content?.parts?.[0]?.text;
+      if (text) onChunk(text);
+      if (data.usageMetadata) usage = extractUsage(data.usageMetadata);
+    }
+    return usage;
+  },
+};
