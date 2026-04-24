@@ -124,31 +124,31 @@ Surface approximate cost per generation.
 ### First-run walkthrough
 Guide new users into a working state.
 
-- [ ] Detect `!apiKey` on popup open; show an onboarding view
-- [ ] Step 1: provider choice · Step 2: "Get a free Gemini API key →" (link to `ai.google.dev`) · Step 3: paste key
-- [ ] Dismissible; return to normal popup after save
+- [x] Detect `!apiKey` on popup open; show an onboarding view
+- [x] Step 1: provider choice · Step 2: "Get a free Gemini API key →" (link to `ai.google.dev`) · Step 3: paste key
+- [x] Dismissible; return to normal popup after save
 
 ### Settings export / import
 Round-trip the whole config as JSON.
 
-- [ ] Popup: *Export* downloads `pr-please-settings.json` (omit API key by default; opt-in checkbox to include it in plain text with a clear warning)
-- [ ] Popup: *Import* accepts a dropped / pasted JSON blob; validate shape before writing
-- [ ] Useful for moving between machines and sharing prompt templates across a team
+- [x] Popup: *Export* downloads `pr-please-settings.json` (omit API key by default; opt-in checkbox to include it in plain text with a clear warning)
+- [x] Popup: *Import* accepts a dropped / pasted JSON blob; validate shape before writing
+- [x] Useful for moving between machines and sharing prompt templates across a team
 
 ### Keyboard shortcut
 Trigger generation without clicking.
 
-- [ ] Add `commands` entry in `manifest.json` (e.g. `Alt+Shift+G`)
-- [ ] Listen in `src/background.ts`; send message to active tab's content script
-- [ ] Content script triggers the same generate flow
+- [x] Add `commands` entry in `manifest.json` (e.g. `Alt+Shift+G`)
+- [x] Listen in `src/background.ts`; send message to active tab's content script
+- [x] Content script triggers the same generate flow
 - [ ] Document in README; respect users remapping in `chrome://extensions/shortcuts`
 
 ### GitHub star count refresh
 Avoid stale numbers.
 
 - [x] Fetch + cache stars in popup (6h TTL) — shipped
-- [ ] Re-fetch when TTL expires on popup open (currently works) — verify in tests
-- [ ] Add a subtle refresh affordance on hover (optional)
+- [x] Re-fetch when TTL expires on popup open (currently works) — verify in tests
+- [x] Add a subtle refresh affordance on hover (optional)
 
 ---
 

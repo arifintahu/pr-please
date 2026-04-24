@@ -37,6 +37,13 @@ chrome.runtime.onMessage.addListener((request: GenerateRequest, _sender, sendRes
   }
 });
 
+chrome.commands.onCommand.addListener(async (command) => {
+  if (command !== 'trigger-generate') return;
+  const [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
+  if (!tab?.id) return;
+  chrome.tabs.sendMessage(tab.id, { action: 'TRIGGER_GENERATE' });
+});
+
 async function handleGeneratePR(request: GenerateRequest) {
   const { commits, prUrl, extraContext, userDraft, useCachedDiff } = request;
 

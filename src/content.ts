@@ -1092,4 +1092,8 @@ const observer = new MutationObserver(() => {
 });
 observer.observe(document.body, { childList: true, subtree: true });
 
+chrome.runtime.onMessage.addListener((msg) => {
+  if (msg?.action === 'TRIGGER_GENERATE') handleGenerate();
+});
+
 injectButton();

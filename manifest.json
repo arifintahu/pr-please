@@ -5,8 +5,18 @@
   "description": "Generate PR titles and descriptions using AI.",
   "permissions": [
     "storage",
-    "activeTab"
+    "activeTab",
+    "tabs"
   ],
+  "commands": {
+    "trigger-generate": {
+      "suggested_key": {
+        "default": "Alt+Shift+G",
+        "mac": "Alt+Shift+G"
+      },
+      "description": "Generate PR title and description"
+    }
+  },
   "host_permissions": [
     "https://github.com/*/*/pull/*",
     "https://github.com/*/*/compare/*",
