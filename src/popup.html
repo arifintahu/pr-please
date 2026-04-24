@@ -220,6 +220,22 @@
           <select class="form-select" id="modelSelect"></select>
         </div>
 
+        <div class="form-group" id="customModelGroup" hidden>
+          <label class="form-label" for="customModel">Custom Model</label>
+          <input
+            class="form-input"
+            id="customModel"
+            type="text"
+            autocomplete="off"
+            spellcheck="false"
+            placeholder="Enter model name"
+            aria-describedby="customModelHint"
+          />
+          <div class="form-hint-plain" id="customModelHint">
+            Exact model identifier sent to the provider.
+          </div>
+        </div>
+
         <div class="form-group" id="apiKeyGroup">
           <label class="form-label" for="apiKey">API Key</label>
           <div class="input-wrapper">

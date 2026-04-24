@@ -4,6 +4,8 @@ export interface PopupElements {
   customUrlGroup: HTMLDivElement;
   customBaseUrlInput: HTMLInputElement;
   modelSelect: HTMLSelectElement;
+  customModelGroup: HTMLDivElement;
+  customModelInput: HTMLInputElement;
   apiKeyGroup: HTMLDivElement;
   apiKeyInput: HTMLInputElement;
   toggleApiKeyBtn: HTMLButtonElement;
@@ -39,6 +41,8 @@ export function getPopupElements(): PopupElements {
     customUrlGroup: byId('customUrlGroup'),
     customBaseUrlInput: byId('customBaseUrl'),
     modelSelect: byId('modelSelect'),
+    customModelGroup: byId('customModelGroup'),
+    customModelInput: byId('customModel'),
     apiKeyGroup: byId('apiKeyGroup'),
     apiKeyInput: byId('apiKey'),
     toggleApiKeyBtn: byId('toggleApiKey'),
